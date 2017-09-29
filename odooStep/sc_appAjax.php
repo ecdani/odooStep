@@ -29,7 +29,29 @@ try {
                 //echo "{success: " . true . ", resultTotal: " . count($user) . ", resultRoot: " . G::json_encode($user) . "}";
                 echo G::json_encode(array("success" => true, "resultTotal" => $userNum, "resultRoot" => $user));
                 break;
+    case "NEWSTEP" :
+    try {
+            $ostep = new OdooStepStep();
+            $ostep->setProUid($_POST["newProceso"]);
+            $ostep->setModel($_POST["newModelo"]);
+            $ostep->setMethod($_POST["newMetodo"]);
+            $ostep->setParameters($_POST["newParametros"]);
+            $ostep->setKwParameters($_POST["newParametrosKW"]);
+            $ostep->save();
+          }
+
+          catch(Exception $e) {
+            throw $e;
+          }
+
+          echo G::json_encode(array(
+            "success" => true,
+            "salvando" => true,
+            "respuesta" => $_POST
+          ));
+    break;
   }
+  
 } catch (Exception $e) {
   echo null;
 }

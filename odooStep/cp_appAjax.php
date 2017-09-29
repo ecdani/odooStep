@@ -42,7 +42,7 @@ try {
                 $osconf = new OdooStepConf();
 
             } 
-            			$osconf->setUrl($_POST["txtUrl"]);
+            $osconf->setUrl($_POST["txtUrl"]);
 			$osconf->setDb($_POST["txtDb"]);
 			$osconf->setUsername($_POST["txtUsuario"]);
 			$osconf->setPassword($_POST["txtPassword"]);
@@ -124,7 +124,7 @@ try {
 
 			echo G::json_encode(array(
 				"loading" => true,
-				"respuesta" => $array
+				//"respuesta" => $array
 			));
 		}
 

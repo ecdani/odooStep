@@ -3,7 +3,7 @@
 fullplugin.application = {
   init:function(){
     storeUserProcess = function (n, r, i) {
-      var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Load users..."});
+      var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Load Odoo steps..."});
       myMask.show();
 
       Ext.Ajax.request({
@@ -17,7 +17,7 @@ fullplugin.application = {
                 },
         failure:function (result, request) {
                   myMask.hide();
-                  Ext.MessageBox.alert("Alert", "Failure users load");
+                  Ext.MessageBox.alert("Alert", "Failure Odoo steps load");
                 }
       });
     };
@@ -74,9 +74,78 @@ fullplugin.application = {
       iconCls: "button_menu_ext ss_sprite ss_add",
       
       handler: function() {
-        Ext.MessageBox.alert("Alert", message);
+        newForm = new Ext.FormPanel({
+        url: '../odooStep/sc_appAjax',
+        frame: true,
+        items: [
+              {xtype: 'textfield', fieldLabel: 'Nombre', name: 'nombre', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textfield', fieldLabel: 'Proceso', name: 'proceso', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textfield', fieldLabel: 'Método', name: 'metodo', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textfield', fieldLabel: 'Modelo', name: 'modelo', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textfield', fieldLabel: 'Parámetros', name: 'parametros', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textfield', fieldLabel: 'Parámetros KW', name: 'parametros KW', width: 250, maxLength :100, allowBlank: false},
+        ],
+        buttons: [
+              {text: _('ID_SAVE'), handler: function(){
+
+
+                  //catName = catName.trim();
+                  //if (catName == '') { // VALIDADOR
+                    //Ext.Msg.alert(_('ID_WARNING'), _("ID_FIELD_REQUIRED", 'Nombre'));
+                    //return;
+                  //}
+                  //viewport.getEl().mask(_('ID_PROCESSING'));
+                  Ext.Ajax.request({
+                    url: '../odooStep/sc_appAjax',
+                    params: {
+                        option: "NEWSTEP",// LA ACCION
+                          newNombre: newForm.getForm().findField('nombre').getValue(),
+                          newProceso: newForm.getForm().findField('proceso').getValue(),
+                          newMetodo: newForm.getForm().findField('metodo').getValue(),
+                          newModelo: newForm.getForm().findField('modelo').getValue(),
+                          newParametros: newForm.getForm().findField('parametros').getValue(),
+                          newParametrosKW: newForm.getForm().findField('parametros KW').getValue()
+                      },
+                    success: function(r,o){
+                      //viewport.getEl().unmask();
+                      PMExt.notify("Success","Odoo Step created" ); // Crea mininotificaciones en el esquinazo.
+                      /*resp = eval(r.responseText);
+                      if (resp){
+                        CloseWindow(); //Hide popup widow
+                            newForm.getForm().reset(); //Set empty form to next use
+                            searchText.reset();
+                            infoGrid.store.load();
+
+                        //viewport.getEl().mask(_('ID_PROCESSING'));
+                      }else{
+                        PMExt.error(_('ID_PROCESS_CATEGORY'),_('ID_CATEGORY_EXISTS')); // Crea mensajes de error.
+                      }*/
+                    },
+                    failure: function(r,o){
+                      viewport.getEl().unmask();
+                    }
+                  });
+              }},
+              {text: _('ID_CANCEL'), handler: CloseWindow}
+        ]
+      });
+      
+      newForm.getForm().reset();
+      newForm.getForm().items.items[0].focus('',500);
+      w = new Ext.Window({
+        title: _('ID_NEW_CATEGORY'),
+        autoHeight: true,
+        width: 420,
+        items: [newForm],
+        id: 'w',
+        modal: true
+      });
+      w.show();
+       //Ext.MessageBox.alert("Alert", message);
       }
     });
+
+
     
     var btnEdit = new Ext.Action({
       id: "btnEdit",
@@ -171,8 +240,8 @@ fullplugin.application = {
       pageSize: pageSize,
       store: storeUser,
       displayInfo: true,
-      displayMsg: "Displaying userssss " + "{" + "0" + "}" + " - " + "{" + "1" + "}" + " of " + "{" + "2" + "}",
-      emptyMsg: "No roles to display",
+      displayMsg: "Displaying Odoo steps " + "{" + "0" + "}" + " - " + "{" + "1" + "}" + " of " + "{" + "2" + "}",
+      emptyMsg: "No steps to display",
       items: ["-", "Page size:", cboPageSize]
     });
        
@@ -220,13 +289,14 @@ fullplugin.application = {
       style: "margin: 0 auto 0 auto;",
       width: 550,
       height: 450, 
-      title: "Users",      
+      title: "Odoo Steps",      
       
       renderTo: "divMain",
       
       listeners:{
       }
     });
+
     
     //Initialize events
     storeUserProcess(pageSize, pageSize, 0);
@@ -244,5 +314,10 @@ fullplugin.application = {
     cboPageSize.setValue(pageSize);
   }
 }
+
+//Close PopUp Window
+CloseWindow = function(){
+  Ext.getCmp('w').hide();
+};
 
 Ext.onReady(fullplugin.application.init, fullplugin.application);

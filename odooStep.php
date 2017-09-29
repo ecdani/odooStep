@@ -53,9 +53,10 @@ class odooStepPlugin extends PMPlugin
      * is the name of the external step that is displayed to the user in ProcessMaker. Feel free to edit the external step's name.
      
      * Invalid value specified for `step_uid_obj`. Maximum 32 characters allowed. 4553885635943a689c55440011049885
+     * Bad Request: Invalid value specified for `step_uid_obj`. Minimum 32 characters required.
      */
-    for ($x = 0; $x <= 10; $x++) {
-      $this->registerStep($x."53885635943a689c55440011049885", "stepodooStepApplication", $x."odooStep external step");
+    for ($x = 0; $x < 10; $x++) {
+      $this->registerStep($x."553885635943a689c55440011049885", "stepodooStepApplication", $x."odooStep step");
       //echo "The number is: $x <br>";
     } 
 

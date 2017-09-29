@@ -20,6 +20,32 @@ try {
   $oHeadPublisher->addContent("odooStep/stepodooStepApplication"); //Adding a html file .html.
   $oHeadPublisher->addExtJsScript("odooStep/stepodooStepApplication", false); //Adding a javascript file .js
   $oHeadPublisher->assign("CONFIG", $config);
+
+
+  $url = "http://localhost:8069";
+  $db = "odoo";
+  $username = "ec.dani@gmail.com";
+  $password = "a";
+
+  $common = ripcord::client("$url/xmlrpc/2/common");
+  print_r ($common->version());
+  echo "Hello world!<br>";
+
+
+  $uid = $common->authenticate($db, $username, $password, array());
+  //print_r ($uid);
+  // Acceso al endpoint de objetos y ejecución de una kw
+  $models = ripcord::client("$url/xmlrpc/2/object");
+  $output = $models->execute_kw($db, $uid, $password,
+      'res.partner', 'check_access_rights',
+      array('read'), array('raise_exception' => false));
+  print_r ($output);
+  $output = $models->execute_kw($db, $uid, $password,
+      'res.partner', 'search', array(
+          array(array('is_company', '=', true),
+                array('customer', '=', true))));
+  print_r ($output);
+
   
   G::RenderPage("publish", "extJs");
   exit(0);

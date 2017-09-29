@@ -12,16 +12,18 @@ odooStep.cp_app = {
       value: CONFIG.resultado.Url, // Valor de inicializacion
       width: 150,
       editable: false,
-      fieldLabel: "Url Odoo:"
+      fieldLabel: "Url Odoo"
     });
     
       var txtDb = new Ext.form.Field({ 
       id: "txtDb",
+      value: CONFIG.resultado.Db, // Valor de inicializacion
       width: 150,
       editable: false,
       fieldLabel: "Base de datos"
     });
       var txtUsuario = new Ext.form.Field({ 
+      value: CONFIG.resultado.Username, // Valor de inicializacion
       id: "txtUsuario",
       width: 150,
       editable: false,
@@ -117,7 +119,7 @@ odooStep.cp_app = {
       border: false,
                      
       
-      items: [txtUrl,txtDb,txtPassword,txtUsuario],
+      items: [txtUrl,txtDb,txtUsuario,txtPassword],
                      
       buttonAlign: "right",
       buttons: [btnSubmit,
