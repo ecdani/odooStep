@@ -10,6 +10,7 @@
   </table>
   <table name="ODOOSTEP_STEP" phpName="OdooStepStep" idMethod="native"> <!-- Configuracion de una step genérica -->
     <column name="ID" type="INTEGER" required="true" primaryKey="true" autoIncrement="true"/>
+    <column name="STEP_ID" type="VARCHAR" size="255" required="true" />
     <column name="PRO_UID" type="VARCHAR" size="32" required="false" default=""/> <!-- Por si se puede filtrar por proceso -->
     <column name="MODEL" type="VARCHAR" size="128" required="true"/>
     <column name="METHOD" type="VARCHAR" size="128" required="true"/>

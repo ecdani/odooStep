@@ -12,6 +12,8 @@ G::LoadClass("plugin");
     get_include_path()
   );
 
+//require_once ("classes/model/OdooStepStepPeer.php");
+
   //Propel::init("/path/to/bookstore/build/conf/runtime-conf.php");
   // initialize Propel with converted config file
             //Propel::init( PATH_CORE . "config/databases.php" );
@@ -41,6 +43,7 @@ class odooStepPlugin extends PMPlugin
  * Any code added to the setup() method in the pluginName.php file WILL BE EXECUTED EVERY TIME
  * ProcessMaker loads a web page, so do not add code which takes too long to execute or may cause errors.
  */
+ 
   public function setup() {
     //http://wiki.processmaker.com/3.0/Internal_Functions_and_Classes#PMPlugin::registerMenu.28.29
     $this->registerMenu("processmaker", "menuodooStep.php");
@@ -52,15 +55,19 @@ class odooStepPlugin extends PMPlugin
      * (without the extension) that will be executed when running the step. The third parameter 
      * is the name of the external step that is displayed to the user in ProcessMaker. Feel free to edit the external step's name.
      
-     * Invalid value specified for `step_uid_obj`. Maximum 32 characters allowed. 4553885635943a689c55440011049885
+     * Invalid value specified for `step_uid_obj`. Maximum 32 characters allowed. 45538 85635 943a6 89c55 44001 10498 85
      * Bad Request: Invalid value specified for `step_uid_obj`. Minimum 32 characters required.
-     */
-    for ($x = 0; $x < 10; $x++) {
-      $this->registerStep($x."553885635943a689c55440011049885", "stepodooStepApplication", $x."odooStep step");
-      //echo "The number is: $x <br>";
-    } 
+     *//*
+    $c = new Criteria();
+    $c->addDescendingOrderByColumn('ID');
+    $steps = OdooStepStepPeer::doSelect($c);
 
-    //$this->registerStep("4553885635943a689c55440011049885", "stepodooStepApplication", "odooStep external step");
+    foreach ($steps as $step) {
+          $this->registerStep($step->getStepId(), "stepodooStepApplication",$step->getModel());
+    } */
+
+
+    //$this->registerStep("4553885635943a689c55440011049885", "stepodooStepApplication", "odooStep external step","stepodooStepApplication");
     $oHeadPublisher = &headPublisher::getSingleton();
     $oHeadPublisher->addExtJsScript("odooStep/dependencies/jquery-3.2.1.min", false); //Adding a javascript file .js
     $oHeadPublisher->addExtJsScript("odooStep/override", false); //Adding a javascript file .js

@@ -67,6 +67,8 @@ class OdooStepStepMapBuilder
 
         $tMap->addPrimaryKey('ID', 'Id', 'int', CreoleTypes::INTEGER, true, null);
 
+        $tMap->addColumn('STEP_ID', 'StepId', 'string', CreoleTypes::VARCHAR, true, 255);
+
         $tMap->addColumn('PRO_UID', 'ProUid', 'string', CreoleTypes::VARCHAR, false, 32);
 
         $tMap->addColumn('MODEL', 'Model', 'string', CreoleTypes::VARCHAR, true, 128);

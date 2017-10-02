@@ -22,15 +22,35 @@ try {
   $oHeadPublisher->addExtJsScript("odooStep/stepodooStepApplication", false); //Adding a javascript file .js
   $oHeadPublisher->assign("CONFIG", $config);
 
+  $osconf = OdooStepConfPeer::retrieveByPK(1); /* Cargamos la configuración básica*/
+  $url = $osconf->getUrl();
+	$db = $osconf->getDb();
+	$username =	$osconf->getUsername();
+	$password =	$osconf->getPassword();
+  
 
-  $url = "http://localhost:8069";
-  $db = "odoo";
-  $username = "ec.dani@gmail.com";
-  $password = "a";
+  //$oCriteria->add(StepPeer::PRO_UID, $_SESSION['PROCESS']);
+
+  //print_r($_GET['UID']);
+  //$ostep = OdooStepStepPeer::retrieveByPK($_GET['UID']);
+  $c = new Criteria();
+  $c->add(OdooStepStepPeer::STEP_ID, $_GET['UID']);
+
+  $ostep = OdooStepStepPeer::doSelectOne($c);
+  //print_r($ostep);
+  /*$GLOBALS
+	$_SERVER
+	$_REQUEST
+	$_POST
+	$_GET
+	$_FILES
+	$_ENV
+	$_COOKIE
+	$_SESSION*/
 
   $common = ripcord::client("$url/xmlrpc/2/common"); /*Fatal error: Class 'ripcord' not found in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 30*/
-  print_r ($common->version());
-  echo "Hello world!<br>";
+  //print_r ($common->version());
+  //echo "Hello world!<br>";
    /*﻿Array ( 
     [server_serie] => 10.0 
     [server_version_info] => Array ( [0] => 10 [1] => 0 [2] => 0 [3] => final [4] => 0 [5] => ) 
@@ -48,13 +68,28 @@ Could not access http://localhost:8069/xmlrpc/2/common*/
   $output = $models->execute_kw($db, $uid, $password,
       'res.partner', 'check_access_rights',
       array('read'), array('raise_exception' => false));
+
+  $models->execute_kw($db, $uid, $password,
+    'res.partner', 'search', array(array(array('is_company', '=', true),array('customer', '=', true))));
+
+  $output = $models->execute_kw($db, $uid, $password,
+      $ostep->getModel(), $ostep->getMethod(),array(
+        array(array('is_company', '=', true),
+              array('customer', '=', true)))); /*Array()
+      $ostep->getParameters(), $ostep->getKwParameters());*/
+
+      $models->execute_kw($db, $uid, $password,
+    'res.partner', 'search', array(
+        array(array('is_company', '=', true),
+              array('customer', '=', true))));
+
   print_r ($output);/*Output: 1*/
 
   $output = $models->execute_kw($db, $uid, $password,
       'res.partner', 'search', array(
           array(array('is_company', '=', true),
                 array('customer', '=', true))));
-  print_r ($output); /*Output: Array ( [0] => 8 [1] => 12 [2] => 9 [3] => 45 [4] => 11 [5] => 13 ) */
+  //print_r ($output); /*Output: Array ( [0] => 8 [1] => 12 [2] => 9 [3] => 45 [4] => 11 [5] => 13 ) */
 
   
   G::RenderPage("publish", "extJs");

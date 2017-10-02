@@ -65,7 +65,11 @@ fullplugin.application = {
       data: [["15"], ["25"], ["35"], ["50"], ["100"]],
       autoLoad: true
     });
-    
+    comboMetodos = new Ext.data.SimpleStore({
+      fields: ['metodo'],
+      data: [["search"], ["search_count"], ["read"], ["fields_get"], ["search_read"], ["create"], ["write"], ["unlink"]],
+      autoLoad: true
+    });
     //
     var btnNew = new Ext.Action({
       id: "btnNew",
@@ -79,8 +83,24 @@ fullplugin.application = {
         frame: true,
         items: [
               {xtype: 'textfield', fieldLabel: 'Nombre', name: 'nombre', width: 250, maxLength :100, allowBlank: false},
+              // query a la tabla process
               {xtype: 'textfield', fieldLabel: 'Proceso', name: 'proceso', width: 250, maxLength :100, allowBlank: false},
-              {xtype: 'textfield', fieldLabel: 'Método', name: 'metodo', width: 250, maxLength :100, allowBlank: false},
+              //{xtype: 'textfield', fieldLabel: 'Método', name: 'metodo', width: 250, maxLength :100, allowBlank: false},
+              {
+                xtype: 'combo',
+                fieldLabel: 'Método',
+                name: 'metodo',
+                typeAhead: true,
+                mode: 'local',
+                store: comboMetodos,
+                displayField: 'metodo',
+                valueField:'metodo',
+                allowBlank: false,
+                editable: false,
+                triggerAction: 'all',
+                emptyText: '',
+                selectOnFocus:true
+              },
               {xtype: 'textfield', fieldLabel: 'Modelo', name: 'modelo', width: 250, maxLength :100, allowBlank: false},
               {xtype: 'textfield', fieldLabel: 'Parámetros', name: 'parametros', width: 250, maxLength :100, allowBlank: false},
               {xtype: 'textfield', fieldLabel: 'Parámetros KW', name: 'parametros KW', width: 250, maxLength :100, allowBlank: false},
