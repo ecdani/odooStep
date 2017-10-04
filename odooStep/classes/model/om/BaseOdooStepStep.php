@@ -46,6 +46,12 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
     protected $pro_uid = '';
 
     /**
+     * The value for the nombre field.
+     * @var        string
+     */
+    protected $nombre;
+
+    /**
      * The value for the model field.
      * @var        string
      */
@@ -114,6 +120,17 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
     {
 
         return $this->pro_uid;
+    }
+
+    /**
+     * Get the [nombre] column value.
+     * 
+     * @return     string
+     */
+    public function getNombre()
+    {
+
+        return $this->nombre;
     }
 
     /**
@@ -227,6 +244,28 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
     } // setProUid()
 
     /**
+     * Set the value of [nombre] column.
+     * 
+     * @param      string $v new value
+     * @return     void
+     */
+    public function setNombre($v)
+    {
+
+        // Since the native PHP type for this column is string,
+        // we will cast the input to a string (if it is not).
+        if ($v !== null && !is_string($v)) {
+            $v = (string) $v;
+        }
+
+        if ($this->nombre !== $v) {
+            $this->nombre = $v;
+            $this->modifiedColumns[] = OdooStepStepPeer::NOMBRE;
+        }
+
+    } // setNombre()
+
+    /**
      * Set the value of [model] column.
      * 
      * @param      string $v new value
@@ -337,20 +376,22 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
 
             $this->pro_uid = $rs->getString($startcol + 2);
 
-            $this->model = $rs->getString($startcol + 3);
+            $this->nombre = $rs->getString($startcol + 3);
 
-            $this->method = $rs->getString($startcol + 4);
+            $this->model = $rs->getString($startcol + 4);
 
-            $this->parameters = $rs->getString($startcol + 5);
+            $this->method = $rs->getString($startcol + 5);
 
-            $this->kw_parameters = $rs->getString($startcol + 6);
+            $this->parameters = $rs->getString($startcol + 6);
+
+            $this->kw_parameters = $rs->getString($startcol + 7);
 
             $this->resetModified();
 
             $this->setNew(false);
 
             // FIXME - using NUM_COLUMNS may be clearer.
-            return $startcol + 7; // 7 = OdooStepStepPeer::NUM_COLUMNS - OdooStepStepPeer::NUM_LAZY_LOAD_COLUMNS).
+            return $startcol + 8; // 8 = OdooStepStepPeer::NUM_COLUMNS - OdooStepStepPeer::NUM_LAZY_LOAD_COLUMNS).
 
         } catch (Exception $e) {
             throw new PropelException("Error populating OdooStepStep object", $e);
@@ -566,15 +607,18 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
                 return $this->getProUid();
                 break;
             case 3:
-                return $this->getModel();
+                return $this->getNombre();
                 break;
             case 4:
-                return $this->getMethod();
+                return $this->getModel();
                 break;
             case 5:
-                return $this->getParameters();
+                return $this->getMethod();
                 break;
             case 6:
+                return $this->getParameters();
+                break;
+            case 7:
                 return $this->getKwParameters();
                 break;
             default:
@@ -600,10 +644,11 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
             $keys[0] => $this->getId(),
             $keys[1] => $this->getStepId(),
             $keys[2] => $this->getProUid(),
-            $keys[3] => $this->getModel(),
-            $keys[4] => $this->getMethod(),
-            $keys[5] => $this->getParameters(),
-            $keys[6] => $this->getKwParameters(),
+            $keys[3] => $this->getNombre(),
+            $keys[4] => $this->getModel(),
+            $keys[5] => $this->getMethod(),
+            $keys[6] => $this->getParameters(),
+            $keys[7] => $this->getKwParameters(),
         );
         return $result;
     }
@@ -645,15 +690,18 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
                 $this->setProUid($value);
                 break;
             case 3:
-                $this->setModel($value);
+                $this->setNombre($value);
                 break;
             case 4:
-                $this->setMethod($value);
+                $this->setModel($value);
                 break;
             case 5:
-                $this->setParameters($value);
+                $this->setMethod($value);
                 break;
             case 6:
+                $this->setParameters($value);
+                break;
+            case 7:
                 $this->setKwParameters($value);
                 break;
         } // switch()
@@ -692,19 +740,23 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
         }
 
         if (array_key_exists($keys[3], $arr)) {
-            $this->setModel($arr[$keys[3]]);
+            $this->setNombre($arr[$keys[3]]);
         }
 
         if (array_key_exists($keys[4], $arr)) {
-            $this->setMethod($arr[$keys[4]]);
+            $this->setModel($arr[$keys[4]]);
         }
 
         if (array_key_exists($keys[5], $arr)) {
-            $this->setParameters($arr[$keys[5]]);
+            $this->setMethod($arr[$keys[5]]);
         }
 
         if (array_key_exists($keys[6], $arr)) {
-            $this->setKwParameters($arr[$keys[6]]);
+            $this->setParameters($arr[$keys[6]]);
+        }
+
+        if (array_key_exists($keys[7], $arr)) {
+            $this->setKwParameters($arr[$keys[7]]);
         }
 
     }
@@ -728,6 +780,10 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
 
         if ($this->isColumnModified(OdooStepStepPeer::PRO_UID)) {
             $criteria->add(OdooStepStepPeer::PRO_UID, $this->pro_uid);
+        }
+
+        if ($this->isColumnModified(OdooStepStepPeer::NOMBRE)) {
+            $criteria->add(OdooStepStepPeer::NOMBRE, $this->nombre);
         }
 
         if ($this->isColumnModified(OdooStepStepPeer::MODEL)) {
@@ -803,6 +859,8 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
         $copyObj->setStepId($this->step_id);
 
         $copyObj->setProUid($this->pro_uid);
+
+        $copyObj->setNombre($this->nombre);
 
         $copyObj->setModel($this->model);
 

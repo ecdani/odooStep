@@ -37,6 +37,10 @@ try {
   $c->add(OdooStepStepPeer::STEP_ID, $_GET['UID']);
 
   $ostep = OdooStepStepPeer::doSelectOne($c);
+  $parametros = $ostep->getParameters();
+  $kwparams = $ostep->getKwParameters();
+  $parametros = unserialize($parametros);
+  $kwparams = unserialize($kwparams);
   //print_r($ostep);
   /*$GLOBALS
 	$_SERVER
@@ -48,6 +52,118 @@ try {
 	$_COOKIE
 	$_SESSION*/
 
+  // https://secure.php.net/manual/es/function.preg-replace-callback.php
+  function varSubtitution($coincidencias) {
+    global $Fields;
+    return($Fields["APP_DATA"][$coincidencias[1]]);
+  }
+
+  foreach ($parametros as $key => $value) {
+    $parametros[$key] = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", "varSubtitution", $value);
+  }
+
+  // https://stackoverflow.com/questions/1987773/use-associative-arrays-with-preg-replace
+  $keys = array_keys($kwparams);
+  $values = array_values($kwparams);
+  $newKeys = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", "varSubtitution", $keys);
+  $newValues = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", "varSubtitution", $values);
+  $kwparams = array_combine($newKeys, $newValues);
+
+  $fparams = array();
+  switch($ostep->getMethod()) {
+    case "search"||"search_count":
+      /*
+      $models->execute_kw($db, $uid, $password,'res.partner', 'search',
+    array(array(array('is_company', '=', true),array('customer', '=', true))),
+    array('offset'=>10, 'limit'=>5));
+      $models->execute_kw($db, $uid, $password,'res.partner', 'search_count',
+    array(array(array('is_company', '=', true),array('customer', '=', true))));
+      */
+      while (!empty($parametros)) {
+        $aux = array();
+        $aux[] =  array_shift ( $parametros );
+        $aux[] =  array_shift ( $parametros );
+        $aux[] =  array_shift ( $parametros );
+        $fparams[] = $aux;
+      }
+      $fparams = array($fparams);
+      break;
+    case "read":
+      /*
+      $models->execute_kw($db, $uid, $password,'res.partner', 'read', 
+      array($ids),
+      array('fields'=>array('name', 'country_id', 'comment')));
+      */
+      $fparams = array($parametros);
+      foreach ($kwparams as $clave => $valor) {
+          $kwparams[$clave] = preg_split("/[,]+/x",$valor);
+      }
+      break;
+    case "fields_get":
+      /*
+      $models->execute_kw($db, $uid, $password,'res.partner', 'fields_get', 
+      array(),
+      array('attributes' => array('string', 'help', 'type')));
+      */
+      $fparams = array();
+      foreach ($kwparams as $clave => $valor) {
+          $kwparams[$clave] = preg_split("/[,]+/x",$valor);
+      }
+      break;
+    case "search_read":
+      /*
+      $models->execute_kw($db, $uid, $password,'res.partner', 'search_read',
+      array(array(array('is_company', '=', true), array('customer', '=', true))),
+      array('fields'=>array('name', 'country_id', 'comment'), 'limit'=>5));
+      */
+      while (!empty($parametros)) {
+        $aux = array();
+        $aux[] =  array_shift ( $parametros );
+        $aux[] =  array_shift ( $parametros );
+        $aux[] =  array_shift ( $parametros );
+        $fparams[] = $aux;
+      }
+      $fparams = array($fparams);
+      
+      foreach ($kwparams as $clave => $valor) {
+          $kwparams[$clave] = preg_split("/[,]+/x",$valor);
+      }
+      break;
+    case "create":
+      /*
+      $id = $models->execute_kw($db, $uid, $password, 'res.partner', 'create',
+      array(array('name'=>"New Partner")));
+      */
+      preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $_POST["newParametros"], $p); // Separación k:v,v,v INTRO k:v,....
+      $parametros = array_combine($p[1], $p[2]);
+      foreach ($parametros as $clave => $valor) {
+          $parametros[$clave] = preg_split("/[,]+/x",$valor);
+      }
+      $fparams = array(array($parametros));
+      break;
+    case "write":
+      /*
+      $models->execute_kw($db, $uid, $password, 'res.partner', 'write',
+      array(array($id), array('name'=>"Newer partner")));
+      El formato será igual que el KW
+      ids:7,5,4,6
+      name:Manolo
+      */
+      preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $_POST["newParametros"], $p); // Separación k:v,v,v INTRO k:v,....
+      $parametros = array_combine($p[1], $p[2]);
+      $parametros[0] = preg_split("/[,]+/x",$parametros["ids"]);
+      $fparams = array($parametros);
+      break;
+    case "unlink":
+      /*
+      $models->execute_kw($db, $uid, $password, 'res.partner', 'unlink',
+      array(array($id)));
+      */
+      $fparams = array(array($parametros));
+      break;
+  }
+
+       
   $common = ripcord::client("$url/xmlrpc/2/common"); /*Fatal error: Class 'ripcord' not found in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 30*/
   //print_r ($common->version());
   //echo "Hello world!<br>";
@@ -65,30 +181,30 @@ Could not access http://localhost:8069/xmlrpc/2/common*/
   //print_r ($uid);
   // Acceso al endpoint de objetos y ejecución de una kw
   $models = ripcord::client("$url/xmlrpc/2/object");
-  $output = $models->execute_kw($db, $uid, $password,
+  /*$output = $models->execute_kw($db, $uid, $password,
       'res.partner', 'check_access_rights',
-      array('read'), array('raise_exception' => false));
+      array('read'), array('raise_exception' => false));*/
 
-  $models->execute_kw($db, $uid, $password,
-    'res.partner', 'search', array(array(array('is_company', '=', true),array('customer', '=', true))));
+  /*$models->execute_kw($db, $uid, $password,
+    'res.partner', 'search', array(array(array('is_company', '=', true),array('customer', '=', true))));*/
 
-  $output = $models->execute_kw($db, $uid, $password,
-      $ostep->getModel(), $ostep->getMethod(),array(
-        array(array('is_company', '=', true),
-              array('customer', '=', true)))); /*Array()
-      $ostep->getParameters(), $ostep->getKwParameters());*/
 
-      $models->execute_kw($db, $uid, $password,
+
+  $output = $models->execute_kw($db, $uid, $password,$ostep->getModel(),$ostep->getMethod(),$fparams, $kwparams);
+  print_r("OUTPUT:");
+  print_r($output);
+
+      /*$models->execute_kw($db, $uid, $password,
     'res.partner', 'search', array(
         array(array('is_company', '=', true),
-              array('customer', '=', true))));
+              array('customer', '=', true))));*/
 
-  print_r ($output);/*Output: 1*/
+  /*print_r ($output);*//*Output: 1*/
 
-  $output = $models->execute_kw($db, $uid, $password,
+  /*$output = $models->execute_kw($db, $uid, $password,
       'res.partner', 'search', array(
           array(array('is_company', '=', true),
-                array('customer', '=', true))));
+                array('customer', '=', true))));*/
   //print_r ($output); /*Output: Array ( [0] => 8 [1] => 12 [2] => 9 [3] => 45 [4] => 11 [5] => 13 ) */
 
   

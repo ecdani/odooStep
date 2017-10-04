@@ -50,125 +50,24 @@ try {
             }
 
             $ostep->setStepId($stepid);
+            $ostep->setNombre($_POST["newNombre"]);
             $ostep->setProUid($_POST["newProceso"]);
             $ostep->setModel($_POST["newModelo"]);
             $ostep->setMethod($_POST["newMetodo"]);
-
+            
             $parametros = preg_split("/[\s,]+/",$_POST["newParametros"]);// Separación v,v,v,...
-            $fparams = array();
 
             preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $_POST["newParametrosKW"], $p); // Separación k:v,v,v INTRO k:v,....
             $kwparams = array_combine($p[1], $p[2]);
-
-            switch($_POST["newMetodo"]) {
-              case "search"||"search_count":
-                /*
-                $models->execute_kw($db, $uid, $password,'res.partner', 'search',
-                                  array(array(array('is_company', '=', true),array('customer', '=', true))),
-                                  array('offset'=>10, 'limit'=>5));
-                $models->execute_kw($db, $uid, $password,'res.partner', 'search_count',
-                                  array(array(array('is_company', '=', true),array('customer', '=', true))));
-                */
-                while (!empty($parametros)) {
-                  $aux = array();
-                  $aux[] =  array_shift ( $parametros );
-                  $aux[] =  array_shift ( $parametros );
-                  $aux[] =  array_shift ( $parametros );
-                  $fparams[] = $aux;
-                }
-                $fparams = array($fparams);
-                break;
-              case "read":
-                /*
-                $models->execute_kw($db, $uid, $password,'res.partner', 'read', 
-                array($ids),
-                array('fields'=>array('name', 'country_id', 'comment')));
-                */
-                $fparams = array($parametros);
-                foreach ($kwparams as $clave => $valor) {
-                    $kwparams[$clave] = preg_split("/[,]+/x",$valor);
-                }
-              
-                break;
-              case "fields_get":
-                /*
-                $models->execute_kw($db, $uid, $password,'res.partner', 'fields_get', 
-                array(),
-                array('attributes' => array('string', 'help', 'type')));
-                */
-                $fparams = array();
-                foreach ($kwparams as $clave => $valor) {
-                    $kwparams[$clave] = preg_split("/[,]+/x",$valor);
-                }
-                break;
-              case "search_read":
-                /*
-                $models->execute_kw($db, $uid, $password,'res.partner', 'search_read',
-                array(array(array('is_company', '=', true), array('customer', '=', true))),
-                array('fields'=>array('name', 'country_id', 'comment'), 'limit'=>5));
-                */
-                while (!empty($parametros)) {
-                  $aux = array();
-                  $aux[] =  array_shift ( $parametros );
-                  $aux[] =  array_shift ( $parametros );
-                  $aux[] =  array_shift ( $parametros );
-                  $fparams[] = $aux;
-                }
-                $fparams = array($fparams);
-                
-                foreach ($kwparams as $clave => $valor) {
-                    $kwparams[$clave] = preg_split("/[,]+/x",$valor);
-                }
-
-                break;
-              case "create":
-                /*
-                $id = $models->execute_kw($db, $uid, $password, 'res.partner', 'create',
-                array(array('name'=>"New Partner")));
-                */
-                preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $_POST["newParametros"], $p); // Separación k:v,v,v INTRO k:v,....
-                $parametros = array_combine($p[1], $p[2]);
-
-                foreach ($parametros as $clave => $valor) {
-                    $parametros[$clave] = preg_split("/[,]+/x",$valor);
-                }
-                $fparams = array(array($parametros));
-                break;
-              case "write":
-                /*
-                $models->execute_kw($db, $uid, $password, 'res.partner', 'write',
-                array(array($id), array('name'=>"Newer partner")));
-
-                El formato será igual que el KW
-                ids:7,5,4,6
-                name:Manolo
-                */
-                preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $_POST["newParametros"], $p); // Separación k:v,v,v INTRO k:v,....
-                $parametros = array_combine($p[1], $p[2]);
-                $parametros[0] = preg_split("/[,]+/x",$parametros["ids"]);
-
-                $fparams = array($parametros);
-                break;
-              case "unlink":
-                /*
-                $models->execute_kw($db, $uid, $password, 'res.partner', 'unlink',
-                array(array($id)));
-                */
-                $fparams = array(array($parametros));
-                break;
-            }
-            
                        
-            $ostep->setParameters(serialize($fparams));
-
-           
+            $ostep->setParameters(serialize($parametros));
             $ostep->setKwParameters(serialize($kwparams));
             $ostep->save();
             //PMPluginRegistry::registerStep( "odooStep", $ostep->getStepId(), "stepodooStepApplication",$ostep->getModel());
             
             //PMPlugin::registerStep($ostep->getStepId(), "stepodooStepApplication",$ostep->getModel());
             $oPluginRegistry = PMPluginRegistry::getSingleton();
-            $oPluginRegistry->registerStep( "odooStep", $ostep->getStepId(), "stepodooStepApplication",$ostep->getModel());
+            $oPluginRegistry->registerStep( "odooStep", $ostep->getStepId(), "stepodooStepApplication",$ostep->getNombre());
             $oPluginRegistry->save();
           }
 

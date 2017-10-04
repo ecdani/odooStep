@@ -71,6 +71,8 @@ class OdooStepStepMapBuilder
 
         $tMap->addColumn('PRO_UID', 'ProUid', 'string', CreoleTypes::VARCHAR, false, 32);
 
+        $tMap->addColumn('NOMBRE', 'Nombre', 'string', CreoleTypes::VARCHAR, true, 128);
+
         $tMap->addColumn('MODEL', 'Model', 'string', CreoleTypes::VARCHAR, true, 128);
 
         $tMap->addColumn('METHOD', 'Method', 'string', CreoleTypes::VARCHAR, true, 128);

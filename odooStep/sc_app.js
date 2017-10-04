@@ -70,6 +70,21 @@ fullplugin.application = {
       data: [["search"], ["search_count"], ["read"], ["fields_get"], ["search_read"], ["create"], ["write"], ["unlink"]],
       autoLoad: true
     });
+    /*
+    comboDepManager = new Ext.data.GroupingStore( {
+    proxy : new Ext.data.HttpProxy({
+      url: 'departments_Ajax?action=usersByDepartment'
+    }),
+    reader : new Ext.data.JsonReader( {
+      root: 'users',
+      fields : [
+                {name : 'USR_UID'},
+                {name : 'USR_VALUE'}
+                ]
+    })
+  });
+    
+     */
     //
     var btnNew = new Ext.Action({
       id: "btnNew",
@@ -129,6 +144,7 @@ fullplugin.application = {
                     success: function(r,o){
                       //viewport.getEl().unmask();
                       PMExt.notify("Success","Odoo Step created" ); // Crea mininotificaciones en el esquinazo.
+                      CloseWindow();
                       /*resp = eval(r.responseText);
                       if (resp){
                         CloseWindow(); //Hide popup widow
@@ -153,7 +169,7 @@ fullplugin.application = {
       newForm.getForm().reset();
       newForm.getForm().items.items[0].focus('',500);
       w = new Ext.Window({
-        title: _('ID_NEW_CATEGORY'),
+        title: "Create new Odoo Step",
         autoHeight: true,
         width: 420,
         items: [newForm],
