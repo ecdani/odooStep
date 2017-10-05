@@ -54,6 +54,7 @@ try {
             $ostep->setProUid($_POST["newProceso"]);
             $ostep->setModel($_POST["newModelo"]);
             $ostep->setMethod($_POST["newMetodo"]);
+            $ostep->setOutput($_POST["newSalida"]);
             
             $parametros = preg_split("/[\s,]+/",$_POST["newParametros"]);// Separación v,v,v,...
 
@@ -81,7 +82,7 @@ try {
             "success" => true,
             "salvando" => true,
             "respuesta" => print_r($_SESSION)
-            //"registro" => print_r($oPluginRegistry),
+            //"parametros" => print_r($parametros),
           ));
     break;
   }

@@ -119,6 +119,7 @@ fullplugin.application = {
               {xtype: 'textfield', fieldLabel: 'Modelo', name: 'modelo', width: 250, maxLength :100, allowBlank: false},
               {xtype: 'textfield', fieldLabel: 'Parámetros', name: 'parametros', width: 250, maxLength :100, allowBlank: false},
               {xtype: 'textfield', fieldLabel: 'Parámetros KW', name: 'parametros KW', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textfield', fieldLabel: 'Salida', name: 'salida', width: 250, maxLength :100, allowBlank: false},
         ],
         buttons: [
               {text: _('ID_SAVE'), handler: function(){
@@ -139,7 +140,8 @@ fullplugin.application = {
                           newMetodo: newForm.getForm().findField('metodo').getValue(),
                           newModelo: newForm.getForm().findField('modelo').getValue(),
                           newParametros: newForm.getForm().findField('parametros').getValue(),
-                          newParametrosKW: newForm.getForm().findField('parametros KW').getValue()
+                          newParametrosKW: newForm.getForm().findField('parametros KW').getValue(),
+                          newSalida: newForm.getForm().findField('salida').getValue()
                       },
                     success: function(r,o){
                       //viewport.getEl().unmask();

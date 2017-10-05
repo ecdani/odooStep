@@ -57,12 +57,22 @@ try {
   // https://secure.php.net/manual/es/function.preg-replace-callback.php
   function varSubtitution($coincidencias) {
     global $Fields;
-    return($Fields["APP_DATA"][$coincidencias[1]]);
+    return(serialize($Fields["APP_DATA"][$coincidencias[1]])); //Array ( [0] => 8 )
+  }
+  //print_r("fields:");
+  //print_r($Fields);
+  //print_r("paramas1:"); //paramas1:Array ( [0] => @@Salida ) 
+  //print_r($parametros);
+  foreach ($parametros as $key => $value) {
+        print_r("Value");
+      print_r($value);
+    //$aux = NULL;
+    $aux = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", "varSubtitution", $value);// Notice: Array to string conversion in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 67
+    if ($aux != $value) {$parametros[$key] = unserialize($aux);}
   }
 
-  foreach ($parametros as $key => $value) {
-    $parametros[$key] = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", "varSubtitution", $value);
-  }
+  //print_r("paramas2:");
+  //print_r($parametros);
 
   // https://stackoverflow.com/questions/1987773/use-associative-arrays-with-preg-replace
   $keys = array_keys($kwparams);
@@ -73,7 +83,8 @@ try {
 
   $fparams = array();
   switch($ostep->getMethod()) {
-    case "search"||"search_count":
+    case "search":
+    case "search_count":
       /*
       $models->execute_kw($db, $uid, $password,'res.partner', 'search',
     array(array(array('is_company', '=', true),array('customer', '=', true))),
@@ -96,7 +107,7 @@ try {
       array($ids),
       array('fields'=>array('name', 'country_id', 'comment')));
       */
-      $fparams = array($parametros);
+      $fparams = $parametros;
       foreach ($kwparams as $clave => $valor) {
           $kwparams[$clave] = preg_split("/[,]+/x",$valor);
       }
@@ -190,11 +201,13 @@ Could not access http://localhost:8069/xmlrpc/2/common*/
   /*$models->execute_kw($db, $uid, $password,
     'res.partner', 'search', array(array(array('is_company', '=', true),array('customer', '=', true))));*/
 
-
+  //print_r("Fparams:");
+  //print_r($fparams); 
 
   $output = $models->execute_kw($db, $uid, $password,$ostep->getModel(),$ostep->getMethod(),$fparams, $kwparams);
-  print_r("OUTPUT:");
-  print_r($output);
+  //print_r("OUTPUT:");
+  //print_r($output);
+
   
   // Salvando la salida en la variable indicada.
   $case = new Cases();
