@@ -36,6 +36,7 @@ CREATE TABLE `ODOOSTEP_STEP`
 	`METHOD` VARCHAR(128)  NOT NULL,
 	`PARAMETERS` MEDIUMTEXT,
 	`KW_PARAMETERS` MEDIUMTEXT,
+	`OUTPUT` VARCHAR,
 	PRIMARY KEY (`ID`)
 )ENGINE=InnoDB ;
 # This restores the fkey checks, after having unset them earlier

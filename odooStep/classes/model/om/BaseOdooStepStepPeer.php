@@ -25,7 +25,7 @@ abstract class BaseOdooStepStepPeer
     const CLASS_DEFAULT = 'classes.model.OdooStepStep';
 
     /** The total number of columns. */
-    const NUM_COLUMNS = 8;
+    const NUM_COLUMNS = 9;
 
     /** The number of lazy-loaded columns. */
     const NUM_LAZY_LOAD_COLUMNS = 0;
@@ -55,6 +55,9 @@ abstract class BaseOdooStepStepPeer
     /** the column name for the KW_PARAMETERS field */
     const KW_PARAMETERS = 'ODOOSTEP_STEP.KW_PARAMETERS';
 
+    /** the column name for the OUTPUT field */
+    const OUTPUT = 'ODOOSTEP_STEP.OUTPUT';
+
     /** The PHP to DB Name Mapping */
     private static $phpNameMap = null;
 
@@ -66,10 +69,10 @@ abstract class BaseOdooStepStepPeer
      * e.g. self::$fieldNames[self::TYPE_PHPNAME][0] = 'Id'
      */
     private static $fieldNames = array (
-        BasePeer::TYPE_PHPNAME => array ('Id', 'StepId', 'ProUid', 'Nombre', 'Model', 'Method', 'Parameters', 'KwParameters', ),
-        BasePeer::TYPE_COLNAME => array (OdooStepStepPeer::ID, OdooStepStepPeer::STEP_ID, OdooStepStepPeer::PRO_UID, OdooStepStepPeer::NOMBRE, OdooStepStepPeer::MODEL, OdooStepStepPeer::METHOD, OdooStepStepPeer::PARAMETERS, OdooStepStepPeer::KW_PARAMETERS, ),
-        BasePeer::TYPE_FIELDNAME => array ('ID', 'STEP_ID', 'PRO_UID', 'NOMBRE', 'MODEL', 'METHOD', 'PARAMETERS', 'KW_PARAMETERS', ),
-        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, )
+        BasePeer::TYPE_PHPNAME => array ('Id', 'StepId', 'ProUid', 'Nombre', 'Model', 'Method', 'Parameters', 'KwParameters', 'Output', ),
+        BasePeer::TYPE_COLNAME => array (OdooStepStepPeer::ID, OdooStepStepPeer::STEP_ID, OdooStepStepPeer::PRO_UID, OdooStepStepPeer::NOMBRE, OdooStepStepPeer::MODEL, OdooStepStepPeer::METHOD, OdooStepStepPeer::PARAMETERS, OdooStepStepPeer::KW_PARAMETERS, OdooStepStepPeer::OUTPUT, ),
+        BasePeer::TYPE_FIELDNAME => array ('ID', 'STEP_ID', 'PRO_UID', 'NOMBRE', 'MODEL', 'METHOD', 'PARAMETERS', 'KW_PARAMETERS', 'OUTPUT', ),
+        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, 8, )
     );
 
     /**
@@ -79,10 +82,10 @@ abstract class BaseOdooStepStepPeer
      * e.g. self::$fieldNames[BasePeer::TYPE_PHPNAME]['Id'] = 0
      */
     private static $fieldKeys = array (
-        BasePeer::TYPE_PHPNAME => array ('Id' => 0, 'StepId' => 1, 'ProUid' => 2, 'Nombre' => 3, 'Model' => 4, 'Method' => 5, 'Parameters' => 6, 'KwParameters' => 7, ),
-        BasePeer::TYPE_COLNAME => array (OdooStepStepPeer::ID => 0, OdooStepStepPeer::STEP_ID => 1, OdooStepStepPeer::PRO_UID => 2, OdooStepStepPeer::NOMBRE => 3, OdooStepStepPeer::MODEL => 4, OdooStepStepPeer::METHOD => 5, OdooStepStepPeer::PARAMETERS => 6, OdooStepStepPeer::KW_PARAMETERS => 7, ),
-        BasePeer::TYPE_FIELDNAME => array ('ID' => 0, 'STEP_ID' => 1, 'PRO_UID' => 2, 'NOMBRE' => 3, 'MODEL' => 4, 'METHOD' => 5, 'PARAMETERS' => 6, 'KW_PARAMETERS' => 7, ),
-        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, )
+        BasePeer::TYPE_PHPNAME => array ('Id' => 0, 'StepId' => 1, 'ProUid' => 2, 'Nombre' => 3, 'Model' => 4, 'Method' => 5, 'Parameters' => 6, 'KwParameters' => 7, 'Output' => 8, ),
+        BasePeer::TYPE_COLNAME => array (OdooStepStepPeer::ID => 0, OdooStepStepPeer::STEP_ID => 1, OdooStepStepPeer::PRO_UID => 2, OdooStepStepPeer::NOMBRE => 3, OdooStepStepPeer::MODEL => 4, OdooStepStepPeer::METHOD => 5, OdooStepStepPeer::PARAMETERS => 6, OdooStepStepPeer::KW_PARAMETERS => 7, OdooStepStepPeer::OUTPUT => 8, ),
+        BasePeer::TYPE_FIELDNAME => array ('ID' => 0, 'STEP_ID' => 1, 'PRO_UID' => 2, 'NOMBRE' => 3, 'MODEL' => 4, 'METHOD' => 5, 'PARAMETERS' => 6, 'KW_PARAMETERS' => 7, 'OUTPUT' => 8, ),
+        BasePeer::TYPE_NUM => array (0, 1, 2, 3, 4, 5, 6, 7, 8, )
     );
 
     /**
@@ -198,6 +201,8 @@ abstract class BaseOdooStepStepPeer
         $criteria->addSelectColumn(OdooStepStepPeer::PARAMETERS);
 
         $criteria->addSelectColumn(OdooStepStepPeer::KW_PARAMETERS);
+
+        $criteria->addSelectColumn(OdooStepStepPeer::OUTPUT);
 
     }
 

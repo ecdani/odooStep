@@ -17,6 +17,7 @@
     <column name="METHOD" type="VARCHAR" size="128" required="true"/>
     <column name="PARAMETERS" type="LONGVARCHAR" required="false"/>
     <column name="KW_PARAMETERS" type="LONGVARCHAR" required="false"/>
+    <column name="OUTPUT" type="VARCHAR" required="false"/>
   </table>
 </database>
 

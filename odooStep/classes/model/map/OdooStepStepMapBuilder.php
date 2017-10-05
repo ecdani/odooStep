@@ -81,6 +81,8 @@ class OdooStepStepMapBuilder
 
         $tMap->addColumn('KW_PARAMETERS', 'KwParameters', 'string', CreoleTypes::LONGVARCHAR, false, null);
 
+        $tMap->addColumn('OUTPUT', 'Output', 'string', CreoleTypes::VARCHAR, false, null);
+
     } // doBuild()
 
 } // OdooStepStepMapBuilder

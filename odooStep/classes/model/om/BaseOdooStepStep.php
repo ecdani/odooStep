@@ -76,6 +76,12 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
     protected $kw_parameters;
 
     /**
+     * The value for the output field.
+     * @var        string
+     */
+    protected $output;
+
+    /**
      * Flag to prevent endless save loop, if this object is referenced
      * by another object which falls in this transaction.
      * @var        boolean
@@ -175,6 +181,17 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
     {
 
         return $this->kw_parameters;
+    }
+
+    /**
+     * Get the [output] column value.
+     * 
+     * @return     string
+     */
+    public function getOutput()
+    {
+
+        return $this->output;
     }
 
     /**
@@ -354,6 +371,28 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
     } // setKwParameters()
 
     /**
+     * Set the value of [output] column.
+     * 
+     * @param      string $v new value
+     * @return     void
+     */
+    public function setOutput($v)
+    {
+
+        // Since the native PHP type for this column is string,
+        // we will cast the input to a string (if it is not).
+        if ($v !== null && !is_string($v)) {
+            $v = (string) $v;
+        }
+
+        if ($this->output !== $v) {
+            $this->output = $v;
+            $this->modifiedColumns[] = OdooStepStepPeer::OUTPUT;
+        }
+
+    } // setOutput()
+
+    /**
      * Hydrates (populates) the object variables with values from the database resultset.
      *
      * An offset (1-based "start column") is specified so that objects can be hydrated
@@ -386,12 +425,14 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
 
             $this->kw_parameters = $rs->getString($startcol + 7);
 
+            $this->output = $rs->getString($startcol + 8);
+
             $this->resetModified();
 
             $this->setNew(false);
 
             // FIXME - using NUM_COLUMNS may be clearer.
-            return $startcol + 8; // 8 = OdooStepStepPeer::NUM_COLUMNS - OdooStepStepPeer::NUM_LAZY_LOAD_COLUMNS).
+            return $startcol + 9; // 9 = OdooStepStepPeer::NUM_COLUMNS - OdooStepStepPeer::NUM_LAZY_LOAD_COLUMNS).
 
         } catch (Exception $e) {
             throw new PropelException("Error populating OdooStepStep object", $e);
@@ -621,6 +662,9 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
             case 7:
                 return $this->getKwParameters();
                 break;
+            case 8:
+                return $this->getOutput();
+                break;
             default:
                 return null;
                 break;
@@ -649,6 +693,7 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
             $keys[5] => $this->getMethod(),
             $keys[6] => $this->getParameters(),
             $keys[7] => $this->getKwParameters(),
+            $keys[8] => $this->getOutput(),
         );
         return $result;
     }
@@ -703,6 +748,9 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
                 break;
             case 7:
                 $this->setKwParameters($value);
+                break;
+            case 8:
+                $this->setOutput($value);
                 break;
         } // switch()
     }
@@ -759,6 +807,10 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
             $this->setKwParameters($arr[$keys[7]]);
         }
 
+        if (array_key_exists($keys[8], $arr)) {
+            $this->setOutput($arr[$keys[8]]);
+        }
+
     }
 
     /**
@@ -800,6 +852,10 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
 
         if ($this->isColumnModified(OdooStepStepPeer::KW_PARAMETERS)) {
             $criteria->add(OdooStepStepPeer::KW_PARAMETERS, $this->kw_parameters);
+        }
+
+        if ($this->isColumnModified(OdooStepStepPeer::OUTPUT)) {
+            $criteria->add(OdooStepStepPeer::OUTPUT, $this->output);
         }
 
 
@@ -869,6 +925,8 @@ abstract class BaseOdooStepStep extends BaseObject implements Persistent
         $copyObj->setParameters($this->parameters);
 
         $copyObj->setKwParameters($this->kw_parameters);
+
+        $copyObj->setOutput($this->output);
 
 
         $copyObj->setNew(true);

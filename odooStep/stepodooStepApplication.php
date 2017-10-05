@@ -6,7 +6,7 @@
 try {
   global $Fields;
   $oHeadPublisher = &headPublisher::getSingleton();
-  
+    
   //SYS_SYS     //Workspace name
   //PROCESS     //Process UID
   //APPLICATION //Case UID
@@ -41,6 +41,8 @@ try {
   $kwparams = $ostep->getKwParameters();
   $parametros = unserialize($parametros);
   $kwparams = unserialize($kwparams);
+
+  //print_r($Fields);
   //print_r($ostep);
   /*$GLOBALS
 	$_SERVER
@@ -193,6 +195,13 @@ Could not access http://localhost:8069/xmlrpc/2/common*/
   $output = $models->execute_kw($db, $uid, $password,$ostep->getModel(),$ostep->getMethod(),$fparams, $kwparams);
   print_r("OUTPUT:");
   print_r($output);
+  
+  // Salvando la salida en la variable indicada.
+  $case = new Cases();
+  $loaded = $case->loadCase($Fields["APP_UID"]);
+  $loaded["APP_DATA"][$ostep->getOutput()] = $output;
+  $case->updateCase($Fields["APP_UID"], $loaded);
+
 
       /*$models->execute_kw($db, $uid, $password,
     'res.partner', 'search', array(
