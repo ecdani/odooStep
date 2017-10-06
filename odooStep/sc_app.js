@@ -2,7 +2,7 @@
 
 fullplugin.application = {
   init:function(){
-    storeUserProcess = function (n, r, i) {
+    storeStepProcess = function (n, r, i) {
       var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Load Odoo steps..."});
       myMask.show();
 
@@ -12,7 +12,7 @@ fullplugin.application = {
         params: {"option": "LST", "pageSize": n, "limit": r, "start": i},
                          
         success:function (result, request) {
-                  storeUser.loadData(Ext.util.JSON.decode(result.responseText));
+                  storeStep.loadData(Ext.util.JSON.decode(result.responseText));
                   myMask.hide();
                 },
         failure:function (result, request) {
@@ -33,9 +33,9 @@ fullplugin.application = {
     var message = CONFIG.message;
     
     //stores
-    var storeUser = new Ext.data.Store({
+    var storeStep = new Ext.data.Store({
       proxy:new Ext.data.HttpProxy({
-        url:    "stepCreator/appAjax",
+        url:    "sc_appAjax",
         method: "POST"
       }),
       
@@ -46,8 +46,8 @@ fullplugin.application = {
         totalProperty: "resultTotal",
         fields: [{name: "ID"},
                  {name: "NAME"},
-                 {name: "AGE"},
-                 {name: "BALANCE"}
+                 {name: "METODO"},
+                 {name: "MODELO"}
                 ]
       }),
       
@@ -55,7 +55,7 @@ fullplugin.application = {
       
       listeners:{
         beforeload:function (store) {
-          this.baseParams = {"option": "LST", "pageSize": pageSize};
+          this.baseParams = {"option": "LST", "pageSize": pageSize,"textfilter": txtSearch.getValue()};
         }
       }
     });
@@ -117,8 +117,9 @@ fullplugin.application = {
                 selectOnFocus:true
               },
               {xtype: 'textfield', fieldLabel: 'Modelo', name: 'modelo', width: 250, maxLength :100, allowBlank: false},
-              {xtype: 'textfield', fieldLabel: 'Parámetros', name: 'parametros', width: 250, maxLength :100, allowBlank: false},
-              {xtype: 'textfield', fieldLabel: 'Parámetros KW', name: 'parametros KW', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textarea',
+              /*emptyText:"Parametros",*/ fieldLabel: 'Parámetros', name: 'parametros', width: 250, maxLength :100, allowBlank: false},
+              {xtype: 'textarea', fieldLabel: 'Parámetros KW', name: 'parametros KW', width: 250, maxLength :100, allowBlank: false},
               {xtype: 'textfield', fieldLabel: 'Salida', name: 'salida', width: 250, maxLength :100, allowBlank: false},
         ],
         buttons: [
@@ -151,7 +152,7 @@ fullplugin.application = {
                       if (resp){
                         CloseWindow(); //Hide popup widow
                             newForm.getForm().reset(); //Set empty form to next use
-                            searchText.reset();
+                            txtSearch.reset();
                             infoGrid.store.load();
 
                         //viewport.getEl().mask(_('ID_PROCESSING'));
@@ -208,14 +209,22 @@ fullplugin.application = {
         Ext.MessageBox.alert("Alert", message);
       }
     });
-    
+    // Do search function
+    // infogrid es un Ext.grid.Gridpanel
+    // store es un Ext.data.Grouping store,
+    // con remoteSort:true
+    DoSearch = function(){
+      storeStep.load({params:{textFilter: txtSearch.getValue()}});
+    }
     var btnSearch = new Ext.Action({
       id: "btnSearch",
       
       text: "Search",
       
       handler: function() {
-        Ext.MessageBox.alert("Alert", message);
+        //Ext.MessageBox.alert("Alert", message);
+        DoSearch();
+        //pagingUser.moveFirst();
       }
     });
     
@@ -235,7 +244,9 @@ fullplugin.application = {
       listeners:{
         specialkey: function (f, e) {
           if (e.getKey() == e.ENTER) {
-            Ext.MessageBox.alert("Alert", message);
+            //Ext.MessageBox.alert("Alert", message);
+            DoSearch();
+            //pagingUser.moveFirst();
           }
         }
       }
@@ -276,7 +287,7 @@ fullplugin.application = {
       id: "pagingUser",
       
       pageSize: pageSize,
-      store: storeUser,
+      store: storeStep,
       displayInfo: true,
       displayMsg: "Displaying Odoo steps " + "{" + "0" + "}" + " - " + "{" + "1" + "}" + " of " + "{" + "2" + "}",
       emptyMsg: "No steps to display",
@@ -290,8 +301,8 @@ fullplugin.application = {
       },
       columns:[{id: "ID", dataIndex: "ID", hidden: true},
                {header: "Name", dataIndex: "NAME", align: "left"},
-               {header: "Age", dataIndex: "AGE", width: 25, align: "center"},
-               {header: "Balance", dataIndex: "BALANCE", width: 25, align: "left"}
+               {header: "Model", dataIndex: "MODELO", width: 25, align: "center"},
+               {header: "Method", dataIndex: "METODO", width: 25, align: "left"}
               ]
     });
     
@@ -312,7 +323,7 @@ fullplugin.application = {
     var grdpnlUser = new Ext.grid.GridPanel({
       id: "grdpnlUser",
       
-      store: storeUser,
+      store: storeStep,
       colModel: cmodel,
       selModel: smodel,
       
@@ -337,7 +348,7 @@ fullplugin.application = {
 
     
     //Initialize events
-    storeUserProcess(pageSize, pageSize, 0);
+    storeStepProcess(pageSize, pageSize, 0);
     
     grdpnlUser.on("rowcontextmenu", 
       function (grid, rowIndex, evt) {
