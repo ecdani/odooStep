@@ -59,11 +59,12 @@ function saveStep($stepid) {
 	$ostep->setMethod($_POST["newMetodo"]);
 	$ostep->setOutput($_POST["newSalida"]);
 	$parametros = preg_split("/[\s,]+/", $_POST["newParametros"]); // Separación v,v,v,...
-	preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $_POST["newParametrosKW"], $p); // Separación k:v,v,v INTRO k:v,....
+	preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $_POST["newParametrosKW"], $p); // Separación k:v,v,v INTRO k:v,.... que no sean iguales la k.
 	$kwparams = array_combine($p[1], $p[2]);
 	$ostep->setParameters(serialize($parametros));
 	$ostep->setKwParameters(serialize($kwparams));
 	$ostep->save();
+	return $ostep;
 }
 
 try {
@@ -106,7 +107,7 @@ try {
 				$stepid = "4553885635943a689c55440011040000";
 			}
 
-			saveStep($stepid);
+			$ostep = saveStep($stepid);
 
 			$oPluginRegistry = PMPluginRegistry::getSingleton();
 			$oPluginRegistry->registerStep("odooStep", $ostep->getStepId() , "stepodooStepApplication", $ostep->getNombre());

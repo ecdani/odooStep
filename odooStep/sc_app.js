@@ -152,6 +152,7 @@ fullplugin.application = {
                     //viewport.getEl().unmask();
                     PMExt.notify("Success", "Odoo Step created"); // Crea mininotificaciones en el esquinazo.
                     CloseWindow();
+                    pagingUser.moveFirst();
                     /*resp = eval(r.responseText);
                     if (resp){
                       CloseWindow(); //Hide popup widow
