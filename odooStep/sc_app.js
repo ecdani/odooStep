@@ -39,8 +39,6 @@ fullplugin.application = {
         method: "POST"
       }),
 
-      //baseParams: {"option": "LST", "pageSize": pageSize},
-
       reader: new Ext.data.JsonReader({
         root: "resultRoot",
         totalProperty: "resultTotal",
@@ -55,8 +53,6 @@ fullplugin.application = {
         ]
       }),
 
-      //autoLoad: true, //First call
-
       listeners: {
         beforeload: function (store) {
           this.baseParams = { "option": "LST", "pageSize": pageSize, "textfilter": txtSearch.getValue() };
@@ -69,27 +65,13 @@ fullplugin.application = {
       data: [["15"], ["25"], ["35"], ["50"], ["100"]],
       autoLoad: true
     });
+
     comboMetodos = new Ext.data.SimpleStore({
       fields: ['metodo'],
       data: [["search"], ["search_count"], ["read"], ["fields_get"], ["search_read"], ["create"], ["write"], ["unlink"]],
       autoLoad: true
     });
-    /*
-    comboDepManager = new Ext.data.GroupingStore( {
-    proxy : new Ext.data.HttpProxy({
-      url: 'departments_Ajax?action=usersByDepartment'
-    }),
-    reader : new Ext.data.JsonReader( {
-      root: 'users',
-      fields : [
-                {name : 'USR_UID'},
-                {name : 'USR_VALUE'}
-                ]
-    })
-  });
-    
-     */
-    //
+
     var btnNew = new Ext.Action({
       id: "btnNew",
 
@@ -101,10 +83,8 @@ fullplugin.application = {
           url: '../odooStep/sc_appAjax',
           frame: true,
           items: [
-            { xtype: 'textfield', fieldLabel: 'Nombre', name: 'nombre', width: 250, maxLength: 100, allowBlank: false },
-            // query a la tabla process
+            { xtype: 'textfield', fieldLabel: 'Nombre', name: 'nombre', width: 250, maxLength: 100, allowBlank: false }, // query a la tabla process
             { xtype: 'textfield', fieldLabel: 'Proceso', name: 'proceso', width: 250, maxLength: 100, allowBlank: false },
-            //{xtype: 'textfield', fieldLabel: 'Método', name: 'metodo', width: 250, maxLength :100, allowBlank: false},
             {
               xtype: 'combo',
               fieldLabel: 'Método',
@@ -128,14 +108,12 @@ fullplugin.application = {
           buttons: [
             {
               text: _('ID_SAVE'), handler: function () {
-
-
                 //catName = catName.trim();
                 //if (catName == '') { // VALIDADOR
                 //Ext.Msg.alert(_('ID_WARNING'), _("ID_FIELD_REQUIRED", 'Nombre'));
                 //return;
                 //}
-                //viewport.getEl().mask(_('ID_PROCESSING'));
+                viewport.getEl().mask(_('ID_PROCESSING'));
                 Ext.Ajax.request({
                   url: '../odooStep/sc_appAjax',
                   params: {
@@ -149,10 +127,10 @@ fullplugin.application = {
                     newSalida: newForm.getForm().findField('salida').getValue()
                   },
                   success: function (r, o) {
-                    //viewport.getEl().unmask();
+                    viewport.getEl().unmask();
                     PMExt.notify("Success", "Odoo Step created"); // Crea mininotificaciones en el esquinazo.
                     CloseWindow();
-                    pagingUser.moveFirst();
+                    pagingStep.moveFirst();
                     /*resp = eval(r.responseText);
                     if (resp){
                       CloseWindow(); //Hide popup widow
@@ -205,10 +183,10 @@ fullplugin.application = {
           newSalida: editForm.getForm().findField('salida').getValue()
         },
         success: function (r, o) {
-          //viewport.getEl().unmask();
+          viewport.getEl().unmask();
           PMExt.notify("Success", "Odoo Step updated"); // Crea mininotificaciones en el esquinazo.
           CloseWindow();
-          pagingUser.moveFirst();
+          pagingStep.moveFirst();
           /*resp = eval(r.responseText);
           if (resp){
             CloseWindow(); //Hide popup widow
@@ -279,10 +257,9 @@ fullplugin.application = {
       ]
     });
 
-
     //Open Edit Group Form
     EditStepWindow = function () {
-      var rowSelected = grdpnlUser.getSelectionModel().getSelected();
+      var rowSelected = grdpnlStep.getSelectionModel().getSelected();
       /*var strName = stringReplace("&lt;", "<", rowSelected.data.CON_VALUE);
       strName = stringReplace("&gt;", ">", strName);
 
@@ -323,40 +300,57 @@ fullplugin.application = {
     });
 
 
+    //Delete Button Action based on \processmaker\workflow\engine\templates\groups\groupsList.js
+    DeleteButtonAction = function () {
+      Ext.Msg.confirm(_('ID_CONFIRM'), _('ID_MSG_CONFIRM_DELETE_GROUP'),
+        function (btn, text) {
+          if (btn == "yes") {
+            var rowSelected = grdpnlStep.getSelectionModel().getSelected();
+
+            viewport.getEl().mask(_("ID_PROCESSING"));
+            Ext.Ajax.request({
+              url: "sc_appAjax",
+              params: {
+                option: "DELETESTEP",
+                id: rowSelected.data.ID,
+              },
+
+              success: function (r, o) {
+                viewport.getEl().unmask();
+                DoSearch();
+                btnEdit.disable();  //Disable Edit Button
+                btnDelete.disable(); //Disable Delete Button
+                PMExt.notify("Success", "Odoo Step deleted");
+              },
+              failure: function () {
+                viewport.getEl().unmask();
+              }
+            });
+          }
+        }
+      );
+    };
 
     var btnDelete = new Ext.Action({
       id: "btnDelete",
-
       text: "Delete",
       iconCls: "button_menu_ext ss_sprite ss_delete",
       disabled: true,
-
-      handler: function () {
-        Ext.MessageBox.alert("Alert", message);
-      }
+      handler: DeleteButtonAction
     });
-    // Do search function
-    // infogrid es un Ext.grid.Gridpanel
-    // store es un Ext.data.Grouping store,
-    // con remoteSort:true
+
     DoSearch = function () {
       storeStep.load({ params: { textFilter: txtSearch.getValue() } });
     }
+
     var btnSearch = new Ext.Action({
       id: "btnSearch",
-
       text: "Search",
-
-      handler: function () {
-        //Ext.MessageBox.alert("Alert", message);
-        DoSearch();
-        //pagingUser.moveFirst();
-      }
+      handler: DoSearch
     });
 
     var mnuContext = new Ext.menu.Menu({
       id: "mnuContext",
-
       items: [btnEdit, btnDelete]
     });
 
@@ -370,9 +364,7 @@ fullplugin.application = {
       listeners: {
         specialkey: function (f, e) {
           if (e.getKey() == e.ENTER) {
-            //Ext.MessageBox.alert("Alert", message);
             DoSearch();
-            //pagingUser.moveFirst();
           }
         }
       }
@@ -380,7 +372,6 @@ fullplugin.application = {
 
     var btnTextClear = new Ext.Action({
       id: "btnTextClear",
-
       text: "X",
       ctCls: "pm_search_x_button",
       handler: function () {
@@ -403,14 +394,14 @@ fullplugin.application = {
         select: function (combo, record, index) {
           pageSize = parseInt(record.data["size"]);
 
-          pagingUser.pageSize = pageSize;
-          pagingUser.moveFirst();
+          pagingStep.pageSize = pageSize;
+          pagingStep.moveFirst();
         }
       }
     });
 
-    var pagingUser = new Ext.PagingToolbar({
-      id: "pagingUser",
+    var pagingStep = new Ext.PagingToolbar({
+      id: "pagingStep",
 
       pageSize: pageSize,
       store: storeStep,
@@ -446,8 +437,8 @@ fullplugin.application = {
       }
     });
 
-    var grdpnlUser = new Ext.grid.GridPanel({
-      id: "grdpnlUser",
+    var grdpnlStep = new Ext.grid.GridPanel({
+      id: "grdpnlStep",
 
       store: storeStep,
       colModel: cmodel,
@@ -459,7 +450,7 @@ fullplugin.application = {
       enableHdMenu: true, //Menu of the column
 
       tbar: [btnNew, "-", btnEdit, btnDelete, "-", "->", txtSearch, btnTextClear, btnSearch],
-      bbar: pagingUser,
+      bbar: pagingStep,
 
       style: "margin: 0 auto 0 auto;",
       width: 550,
@@ -471,12 +462,19 @@ fullplugin.application = {
       listeners: {
       }
     });
-
+    
+    var viewport = new Ext.Viewport({
+    layout: 'fit',
+    autoScroll: false,
+    items: [
+            grdpnlStep
+            ]
+    });
 
     //Initialize events
     storeStepProcess(pageSize, pageSize, 0);
 
-    grdpnlUser.on("rowcontextmenu",
+    grdpnlStep.on("rowcontextmenu",
       function (grid, rowIndex, evt) {
         var sm = grid.getSelectionModel();
         sm.selectRow(rowIndex, sm.isSelected(rowIndex));
@@ -484,7 +482,7 @@ fullplugin.application = {
       this
     );
 
-    grdpnlUser.addListener("rowcontextmenu", onMnuContext, this);
+    grdpnlStep.addListener("rowcontextmenu", onMnuContext, this);
 
     cboPageSize.setValue(pageSize);
   }

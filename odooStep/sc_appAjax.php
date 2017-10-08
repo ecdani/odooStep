@@ -88,6 +88,12 @@ try {
 	case "UPDATESTEP":
 		saveStep($_POST["id"]);
 		break;
+	case "DELETESTEP":
+		$ostep = OdooStepStepPeer::retrieveByPK($_POST["id"]);
+		if (is_object($ostep) && get_class($ostep) == 'OdooStepStep') {
+			$ostep->delete();
+		}
+	break;
 
 	case "NEWSTEP":
 		try {
