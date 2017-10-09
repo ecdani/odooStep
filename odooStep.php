@@ -76,20 +76,88 @@ class odooStepPlugin extends PMPlugin
     
   }
 
-  public function install()
-  {
-  }
-  
-  public function enable()
-  {
-    
+  /**
+   * Codigo que se ejecuta durante la importación del plugin.
+   */
+  public function install() {
+    //$books = BookPeer::populateObjects($rs);    
+    //$db = new PDO($dsn, $user, $password);
+    //$qr = $db->exec($sql);
   }
 
-  public function disable()
-  {
-    
+   /**
+   * Codigo que se ejecuta durante la habilitación del plugin.
+   */
+  public function enable() {
+    try{
+      $sql = file_get_contents(PATH_CORE . 'plugins/odooStep/data/mysql/schema.sql');
+
+      //require_once(PATH_DB . SYS_SYS . '/db.php');
+      //$dsn     = DB_ADAPTER . ':dbname=' .  DB_NAME . ';host=' . DB_HOST;
+      //$dsn     = DB_ADAPTER . '://' .  DB_USER . ':' . DB_PASS . '@' . DB_HOST . '/' . DB_NAME;
+
+      mysql_connect(DB_HOST, DB_USER, DB_PASS) or die('Error connecting to MySQL server: ' . mysql_error());
+      mysql_select_db(DB_NAME) or die('Error selecting MySQL database: ' . mysql_error());
+
+      $templine = '';
+      $lines = file(PATH_CORE . 'plugins/odooStep/data/mysql/schema.sql');
+
+      foreach ($lines as $line) {
+      if (substr($line, 0, 2) == '--' || $line == '') // Skip it if it's a comment
+          continue;
+
+      $templine .= $line;
+      if (substr(trim($line), -1, 1) == ';') { // If it has a semicolon at the end, it's the end of the query
+          mysql_query($templine) or print('Error performing query \'<strong>' . $templine . '\': ' . mysql_error() . '<br /><br />');
+          $templine = '';
+          }
+      }
+      //echo "Tables imported successfully";
+
+    } catch(Exception $e) {
+      $G_PUBLISH = new Publisher;
+      $aMessage["MESSAGE"] = $e->getMessage();
+      $G_PUBLISH->AddContent("xmlform", "xmlform", "odooStep/messageShow", "", $aMessage);
+      G::RenderPage("publish", "blank");
+    }
   }
-  
+
+  /**
+   * Codigo que se ejecuta durante la deshabilitación del plugin.
+   */
+  public function disable() {
+    try{
+      $sql = file_get_contents(PATH_CORE . 'plugins/odooStep/data/mysql/schema.sql');
+
+      //require_once(PATH_DB . SYS_SYS . '/db.php');
+      //$dsn     = DB_ADAPTER . ':dbname=' .  DB_NAME . ';host=' . DB_HOST;
+      //$dsn     = DB_ADAPTER . '://' .  DB_USER . ':' . DB_PASS . '@' . DB_HOST . '/' . DB_NAME;
+
+      mysql_connect(DB_HOST, DB_USER, DB_PASS) or die('Error connecting to MySQL server: ' . mysql_error());
+      mysql_select_db(DB_NAME) or die('Error selecting MySQL database: ' . mysql_error());
+
+      $templine = '';
+      $lines = file(PATH_CORE . 'plugins/odooStep/data/mysql/dropschema.sql');
+
+      foreach ($lines as $line) {
+      if (substr($line, 0, 2) == '--' || $line == '') // Skip it if it's a comment
+          continue;
+
+      $templine .= $line;
+      if (substr(trim($line), -1, 1) == ';') { // If it has a semicolon at the end, it's the end of the query
+          mysql_query($templine) or print('Error performing query \'<strong>' . $templine . '\': ' . mysql_error() . '<br /><br />');
+          $templine = '';
+          }
+      }
+      //echo "Tables deleted successfully";
+
+    } catch(Exception $e) {
+      $G_PUBLISH = new Publisher;
+      $aMessage["MESSAGE"] = $e->getMessage();
+      $G_PUBLISH->AddContent("xmlform", "xmlform", "odooStep/messageShow", "", $aMessage);
+      G::RenderPage("publish", "blank");
+    }
+  }
 }
 
 $oPluginRegistry = &PMPluginRegistry::getSingleton();

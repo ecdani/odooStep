@@ -21,39 +21,19 @@ try {
   $config["pageSize"] = 15;
   $config["message"] = "Hello world!";
 
-
-        try{
-        //$con = Propel::getConnection('workflow');
-        $con = Propel::getConnection(OdooStepConfPeer::DATABASE_NAME);
-        //$con->begin();
-        $OdooStepConf = OdooStepConfPeer::retrieveByPK(1);
-        if (! is_null ( $OdooStepConf ) ) {
-        $array = $OdooStepConf->toArray();
-        } else {
-            $array = null;
-        }
-        /*$sql = 'SELECT * FROM ODOOSTEP_CONFIG';  
-        $stmt = $con->createStatement();
-            $rs = $stmt->executeQuery($sql, ResultSet::FETCHMODE_NUM); 
-            //$osconfs = OdooStepConfPeer::populateObjects($rs);   
-            //$row = $rs->getRow();
-            $conf = new OdooStepConf();
-            $conf->hydrate($rs);
-            $array = $conf->toArray();*/
-
-        //$con->commit();
-        $config["resultado"] = $array;
-
-        
-        //sleep (2 );
-        
-        //echo $rs;
-        //return $rs;
-       } catch (PropelException $e) {
+  try{
+    $con = Propel::getConnection(OdooStepConfPeer::DATABASE_NAME);
+    $OdooStepConf = OdooStepConfPeer::retrieveByPK(1);
+    if (! is_null ( $OdooStepConf ) ) {
+      $array = $OdooStepConf->toArray();
+    } else {
+      $array = null;
+    }
+    $config["resultado"] = $array;
+  } catch (PropelException $e) {
             $con->rollback();
             throw $e;
-        }
-
+  }
     
   // A partir de aquí es EXTJS quien construye la página, en cp_app.js
   $oHeadPublisher->addContent("odooStep/cp_app"); //Adding a html file .html
@@ -65,7 +45,7 @@ try {
   $G_PUBLISH = new Publisher;
   
   $aMessage["MESSAGE"] = $e->getMessage();
-  $G_PUBLISH->AddContent("xmlform", "xmlform", "fullplugin/messageShow", "", $aMessage);
+  $G_PUBLISH->AddContent("xmlform", "xmlform", "odooStep/messageShow", "", $aMessage);
   G::RenderPage("publish", "blank");
 }
 ?>
