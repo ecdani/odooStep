@@ -215,6 +215,8 @@ Could not access http://localhost:8069/xmlrpc/2/common*/
   $loaded["APP_DATA"][$ostep->getOutput()] = $output;
   $case->updateCase($Fields["APP_UID"], $loaded);
 
+  
+
 
       /*$models->execute_kw($db, $uid, $password,
     'res.partner', 'search', array(

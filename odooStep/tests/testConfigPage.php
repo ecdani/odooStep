@@ -1,29 +1,72 @@
 <?php
-        /*set_include_path(realpath(dirname(__FILE__) . "/../odooStep"));
-        $rootDir = realpath(__DIR__."/../../../../");
-
-         //define("PATH_SEP", DIRECTORY_SEPARATOR);
-
-
-        define("PATH_HOME", $rootDir . PATH_SEP . "workflow/");
-        define("PATH_CORE", PATH_HOME . "engine/");
-
-        define("PATH_PLUGIN_OS",PATH_CORE . "/plugins/odooStep/");
-        set_include_path(
-            PATH_PLUGIN_OS.PATH_SEPARATOR.
-            get_include_path()
-        );    
-
-        require_once("cp_appAjax.php");*/
-        //
 require_once(dirname(__FILE__) . '/simpletest/autorun.php');
-require_once('../classes/log.php');
+require_once('simpletest/mock_objects.php');
+require_once("cp_appAjax.php");
+Mock::generate('OdooStepConf');
+Mock::generatePartial('cpAppAjax','cpAppAjaxTest', array('newOdooStepConf'));
 
-class TestOfLogging extends UnitTestCase {
-    function testFirstLogMessagesCreatesFileIfNonexistent() {
-                @unlink(dirname(__FILE__) . '/../temp/test.log');
-        $log = new Log(dirname(__FILE__) . '/../temp/test.log');
-        $log->message('Should write this to a file');
-        $this->assertTrue(file_exists(dirname(__FILE__) . '/../temp/test.log'));
+class TestOfCPSave extends UnitTestCase {
+    public $post = array(), $osc, $cpaa;
+    
+    /**
+     *    Sets up unit test wide variables at the start
+     *    of each test method. To be overridden in
+     *    actual user test cases.
+     *    @access public
+     */
+    function setUp() {
+        $this->osc = new MockOdooStepConf();
+        $this->osc->returns('save', true);
+
+        $this->cpaa = new cpAppAjaxTest();
+        $this->cpaa->setReturnReference('newOdooStepConf', $this->osc);
+    }
+
+    /**
+     *    Clears the data set in the setUp() method call.
+     *    To be overridden by the user in actual user test cases.
+     *    @access public
+     */
+    function tearDown() {
+    }
+
+    function __construct() {
+        parent::__construct('Guardado de configuracion');
+    }
+
+    function testSave() {
+        $post["txtUrl"] = "url2";
+		$post["txtDb"] = "db";
+		$post["txtUsuario"] = "usuario";
+		$post["txtPassword"] = "password";
+        $s = json_decode($this->cpaa->saveConf($post));
+        $this->assertTrue($s->success);
+    }
+
+    function testMalformed1() {
+		$post["txtDb"] = "db";
+		$post["txtUsuario"] = "usuario";
+		$post["txtPassword"] = "password";
+        $s = json_decode($this->cpaa->saveConf($post));
+        $this->assertFalse($s->success);
+    }
+
+    function testMalformed2() {
+		$post["txtUsuario"] = "usuario";
+		$post["txtPassword"] = "password";
+        $s = json_decode($this->cpaa->saveConf($post));
+        $this->assertFalse($s->success);
+    }
+
+    function testMalformed3() {
+		$post["txtPassword"] = "password";
+        $s = json_decode($this->cpaa->saveConf($post));
+        $this->assertFalse($s->success);
+    }
+
+    function testMalformed4() {
+        $post = null;
+        $s = json_decode($this->cpaa->saveConf($post));
+        $this->assertFalse($s->success);
     }
 }
