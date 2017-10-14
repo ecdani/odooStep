@@ -9,6 +9,6 @@ class AllTests extends TestSuite
         parent::__construct('All tests for Odoo Step ');
         $this->addFile(dirname(__FILE__) . '/testConfigPage.php');
         $this->addFile(dirname(__FILE__) . '/testCRUDsteps.php');
-        $this->addFile(dirname(__FILE__) . '/testInstall.php');
+        //$this->addFile(dirname(__FILE__) . '/testInstall.php');
     }
 }

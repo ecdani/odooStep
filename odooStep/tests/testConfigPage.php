@@ -1,12 +1,12 @@
 <?php
 require_once(dirname(__FILE__) . '/simpletest/autorun.php');
 require_once('simpletest/mock_objects.php');
-require_once("cp_appAjax.php");
+require_once("CpApp.class.php");
 Mock::generate('OdooStepConf');
-Mock::generatePartial('cpAppAjax','cpAppAjaxTest', array('newOdooStepConf'));
+Mock::generatePartial('cpApp','cpAppTest', array('f'));
 
 class TestOfCPSave extends UnitTestCase {
-    public $post = array(), $osc, $cpaa;
+    public $post = array(), $osc, $oscp, $cpaa;
     
     /**
      *    Sets up unit test wide variables at the start
@@ -17,9 +17,14 @@ class TestOfCPSave extends UnitTestCase {
     function setUp() {
         $this->osc = new MockOdooStepConf();
         $this->osc->returns('save', true);
+        $this->osc->setUrl("http://test");
+        $this->osc->setDb("test");
+        $this->osc->setUsername("tester");
 
-        $this->cpaa = new cpAppAjaxTest();
-        $this->cpaa->setReturnReference('newOdooStepConf', $this->osc);
+        $this->cpaa = new cpAppTest();
+        //$this->cpaa->setReturnReference('newOdooStepConf', $this->osc);
+        //$this->cpaa->returns('f', $this->osc);
+        $this->cpaa->returns('f', $this->osc,array('OdooStepConf'));
     }
 
     /**
@@ -35,7 +40,7 @@ class TestOfCPSave extends UnitTestCase {
     }
 
     function testSave() {
-        $post["txtUrl"] = "url2";
+        $post["txtUrl"] = "url";
 		$post["txtDb"] = "db";
 		$post["txtUsuario"] = "usuario";
 		$post["txtPassword"] = "password";
@@ -43,7 +48,7 @@ class TestOfCPSave extends UnitTestCase {
         $this->assertTrue($s->success);
     }
 
-    function testMalformed1() {
+    function testSaveMalformed1() {
 		$post["txtDb"] = "db";
 		$post["txtUsuario"] = "usuario";
 		$post["txtPassword"] = "password";
@@ -51,22 +56,40 @@ class TestOfCPSave extends UnitTestCase {
         $this->assertFalse($s->success);
     }
 
-    function testMalformed2() {
+    function testSaveMalformed2() {
 		$post["txtUsuario"] = "usuario";
 		$post["txtPassword"] = "password";
         $s = json_decode($this->cpaa->saveConf($post));
         $this->assertFalse($s->success);
     }
 
-    function testMalformed3() {
+    function testSaveMalformed3() {
 		$post["txtPassword"] = "password";
         $s = json_decode($this->cpaa->saveConf($post));
         $this->assertFalse($s->success);
     }
 
-    function testMalformed4() {
+    function testSaveMalformed4() {
         $post = null;
         $s = json_decode($this->cpaa->saveConf($post));
         $this->assertFalse($s->success);
     }
+
+    function testLoad() {
+
+        $s = $this->cpaa->loadConf();
+        $this->assertIsA($s, 'Array');
+        $this->assertTrue(array_key_exists('Username', $s));
+        $this->assertTrue(array_key_exists('Url', $s));
+        $this->assertTrue(array_key_exists('Db', $s));
+        if (!is_null($s['Username'])) {
+            
+            $this->assertTrue(is_string($s['Username']));
+            $this->assertTrue(is_string($s['Url']));
+            $this->assertTrue(is_string($s['Db']));
+        }
+    }
+
+
+
 }
