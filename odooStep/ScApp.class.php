@@ -30,7 +30,7 @@ class scApp {
 	 * formato aceptado por el plugin para los parametrosKW
 	 */
 	public function revert(&$v, $k) {
-		$v = "$k:$v\n";
+		$v = "$k:$v"; // Sin /n
 	}
 
 	public function revertParams($params) {
@@ -41,7 +41,10 @@ class scApp {
 	public function revertKWParams($kwparams) {
 		$kwp = unserialize($kwparams);
 		array_walk($kwp, array($this, 'revert'));
-		return implode("\n", array_values($kwp));
+		$s = implode("\n", array_values($kwp)); // Sin /n
+		rtrim($s);
+		return $s;
+
 	}
 
 	// Separación v,v,v,...
@@ -52,7 +55,7 @@ class scApp {
 
 	// Separación k:v,v,v INTRO k:v,.... que no sean iguales la k.
 	public function transformKWParams($kwparams){
-		preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $kwparams, $p); 
+		preg_match_all("/([^:\n]+):([^\n]+)/x", $kwparams, $p); 
 		$kwparams = array_combine($p[1], $p[2]);
 		return serialize($kwparams);
 	}
@@ -76,7 +79,7 @@ class scApp {
 		foreach($steps as $k => $v) {
 			$p = $this->revertParams($v->getParameters());
 			$kwp = $this->revertKWParams($v->getKwParameters());
-
+			
 			$return[] = array(
 				"ID" => $v->getId() ,
 				"PRO_UID" => $v->getProUid() ,
@@ -100,7 +103,7 @@ class scApp {
 			$ostep = $this->osspProxy('retrieveByPK',$post["id"]);
 			if (!(is_object($ostep) && get_class($ostep) == 'OdooStepStep')) {
 				$ostep = new OdooStepStep();
-				$ostep->setStepId($stepid);
+				$ostep->setStepId($post["id"]);
 			}
 
 			$ostep->setNombre($post["newNombre"]);

@@ -3,7 +3,7 @@ require_once(dirname(__FILE__) . '/simpletest/autorun.php');
 require_once('simpletest/mock_objects.php');
 require_once("CpApp.class.php");
 Mock::generate('OdooStepConf');
-Mock::generatePartial('cpApp','cpAppTest', array('f'));
+Mock::generatePartial('cpApp','cpAppTest', array('f','oscpProxy'));
 
 class TestOfCPSave extends UnitTestCase {
     public $post = array(), $osc, $oscp, $cpaa;
@@ -25,6 +25,7 @@ class TestOfCPSave extends UnitTestCase {
         //$this->cpaa->setReturnReference('newOdooStepConf', $this->osc);
         //$this->cpaa->returns('f', $this->osc);
         $this->cpaa->returns('f', $this->osc,array('OdooStepConf'));
+        $this->cpaa->returns('oscpProxy', $this->osc ,array('retrieveByPK'));
     }
 
     /**
@@ -44,7 +45,7 @@ class TestOfCPSave extends UnitTestCase {
 		$post["txtDb"] = "db";
 		$post["txtUsuario"] = "usuario";
 		$post["txtPassword"] = "password";
-        $s = json_decode($this->cpaa->saveConf($post));
+        $s = json_decode($this->cpaa->saveConf($post)); // El retrieve debe hacerse como en CRUD
         $this->assertTrue($s->success);
     }
 
