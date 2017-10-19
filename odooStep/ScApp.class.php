@@ -13,6 +13,8 @@ class scApp {
 		switch ($p) {
             case "OdooStepConf":
             	return new OdooStepConf();
+			case "OdooStepStep":
+				return new OdooStepStep();
             break;
         }
     }
@@ -29,6 +31,7 @@ class scApp {
 	 * Revierte un array clave-valor al texto con
 	 * formato aceptado por el plugin para los parametrosKW
 	 */
+	 /*
 	public function revert(&$v, $k) {
 		$v = "$k:$v"; // Sin /n
 	}
@@ -45,20 +48,20 @@ class scApp {
 		rtrim($s);
 		return $s;
 
-	}
+	}*/
 
 	// Separación v,v,v,...
-	public function transformParams($params){
+	/*public function transformParams($params){
 		$parametros = preg_split("/[\s,]+/", $params);
 		return serialize($parametros);
-	}
+	}*/
 
 	// Separación k:v,v,v INTRO k:v,.... que no sean iguales la k.
-	public function transformKWParams($kwparams){
+	/*public function transformKWParams($kwparams){
 		preg_match_all("/([^:\n]+):([^\n]+)/x", $kwparams, $p); 
 		$kwparams = array_combine($p[1], $p[2]);
 		return serialize($kwparams);
-	}
+	}*/
 
 	/**
 	 * Obtiene una lista de OdooSteps preparada para ser mostrada
@@ -77,8 +80,8 @@ class scApp {
 		$steps = $this->osspProxy('doSelect',$c);
 		$return = array();
 		foreach($steps as $k => $v) {
-			$p = $this->revertParams($v->getParameters());
-			$kwp = $this->revertKWParams($v->getKwParameters());
+			//$p = $this->revertParams($v->getParameters());
+			//$kwp = $this->revertKWParams($v->getKwParameters());
 			
 			$return[] = array(
 				"ID" => $v->getId() ,
@@ -86,8 +89,8 @@ class scApp {
 				"NOMBRE" => $v->getNombre() ,
 				"MODEL" => $v->getModel() ,
 				"METHOD" => $v->getMethod() ,
-				"PARAMETERS" => $p,
-				"KW_PARAMETERS" => $kwp,
+				"PARAMETERS" => $v->getParameters(),//$p,
+				"KW_PARAMETERS" => $v->getKwParameters(),//$kwp,
 				"OUTPUT" => $v->getOutput()
 			);
 		}
@@ -102,7 +105,8 @@ class scApp {
 			//$ostep = OdooStepStepPeer::retrieveByPK($stepid);
 			$ostep = $this->osspProxy('retrieveByPK',$post["id"]);
 			if (!(is_object($ostep) && get_class($ostep) == 'OdooStepStep')) {
-				$ostep = new OdooStepStep();
+				$ostep = $this->f("OdooStepStep");
+				//$ostep = new OdooStepStep();
 				$ostep->setStepId($post["id"]);
 			}
 
@@ -111,10 +115,10 @@ class scApp {
 			$ostep->setModel($post["newModelo"]);
 			$ostep->setMethod($post["newMetodo"]);
 			$ostep->setOutput($post["newSalida"]);
-			$parametros = $this->transformParams($post["newParametros"]);
-			$kwparams = $this->transformKWParams($post["newParametrosKW"]);
-			$ostep->setParameters($parametros);
-			$ostep->setKwParameters($kwparams);
+			//$parametros = $this->transformParams($post["newParametros"]);
+			//$kwparams = $this->transformKWParams($post["newParametrosKW"]);
+			$ostep->setParameters($post["newParametros"]);
+			$ostep->setKwParameters($post["newParametrosKW"]);
 			$ostep->save();
 			return array("success" => true, "respuesta" => $ostep);
 		} catch (Exception $e) {
