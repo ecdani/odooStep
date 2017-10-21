@@ -68,7 +68,7 @@ fullplugin.application = {
 
     comboMetodos = new Ext.data.SimpleStore({
       fields: ['metodo'],
-      data: [["search"], ["search_count"], ["read"], ["fields_get"], ["search_read"], ["create"], ["write"], ["unlink"]],
+      data: [["search"], ["search_count"], ["read"], ["fields_get"], ["search_read"], ["create"],["create_multiple"], ["write"], ["unlink"]],
       autoLoad: true
     });
 

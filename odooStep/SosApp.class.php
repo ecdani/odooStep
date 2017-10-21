@@ -7,6 +7,10 @@
  */
 class SosApp {
     protected $ostep, $kwparams, $params, $url,$db,$username,$password,$output;
+    protected $refvarm = array(); //Array de referencias a variables múltiple en los kwparams
+    protected $valvarm = array(); //Array de valores de las variables múltiple de los kwparams
+    protected $keyvarm = array(); //Array de claves de las variables múltiple de los kwparams
+    // Almaceno dónde hay una variable múltiple y luego itero todos sus valores en llamadas XML-RPC
 
     /**
 	* Factory method, los métodos estáticos no pueden emularse.
@@ -92,13 +96,33 @@ class SosApp {
         return $p;
     }
 	
-    public function prepareKWParams($kwp) {
+    //https://stackoverflow.com/questions/14472380/php-store-array-in-array-by-reference
+    public function prepareKWParams($kwp) {// Eliminada capacidad para reeplazar variables en claves.
         //$kwp = unserialize($kwp);
-        $keys = array_keys($kwp);
-        $values = array_values($kwp);
-        $newKeys = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $keys);
-        $newValues = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $values);
-        $kwp = array_combine($newKeys, $newValues);
+        //$keys = array_keys($kwp);
+        //$values = array_values($kwp);
+
+        foreach ($kwp as $key => $value) {
+          
+        
+        // TODO: FUSIONAR LOS BUCLES PARA GUARDAR LAS CLAVES DE DONDE ESTAN LAS VARIABLES MULTIPLES Y USARLAS DE ID PARA EL CAMPO DEL GRID
+        // PORUQE LA VARIABLE MULTIPLE VA A TRABAJAR EN MODO GRID.
+        //
+            $newValue = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $value);
+            if ($newValue != $value) {
+                $kwp[$key] = unserialize($newValue);
+                if(is_array($kwp[$key])) { // Es una variable múltiple (un array), la guardamos para posiblemente iterar luego.
+                    $this->refvarm[] = &$kwp[$key];
+                    $this->keyvarm[] = $key;
+                    $this->valvarm[] = $kwp[$key];
+                }
+            }
+
+        }
+
+        //$newKeys = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $keys);
+        //$newValues = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $values);
+        //$kwp = array_combine($keys, $values);
         return $kwp;
     }
 
@@ -208,10 +232,36 @@ class SosApp {
             //preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $p, $par); // Separación k:v,v,v INTRO k:v,....
             //$p = array_combine($par[1], $par[2]);
             foreach ($p as $clave => $valor) {
-                $p[$clave] = preg_split("/[,]+/x",$valor);
+                if(!is_array($valor)) {// Si no es una sustitución por una variable múltiple...
+                    $p[$clave] = preg_split("/[,]+/x",$valor);
+                    if (count($p[$clave]) == 1) {
+                        $p[$clave] = $p[$clave][0];
+                    }
+                }
             }
             return array(array($p),NULL);
     }
+
+    /**
+     * $id = $models->execute_kw($db, $uid, $password, 'res.partner', 'create',
+     * array(array('name'=>"New Partner")));
+     */
+    public function preprocessCreateMultiple($p,$kwp){
+            $p = $this->transformKWParams($p);
+            $p = $this->prepareKWParams($p);
+        
+            //preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $p, $par); // Separación k:v,v,v INTRO k:v,....
+            //$p = array_combine($par[1], $par[2]);
+            foreach ($p as $clave => $valor) {
+                $p[$clave] = preg_split("/[,]+/x",$valor);
+                if (count($p[$clave]) == 1) {
+                    $p[$clave] = $p[$clave][0];
+                }
+                
+            }
+            return array(array($p),NULL);
+    }
+
 
     /**
      * $models->execute_kw($db, $uid, $password, 'res.partner', 'write',
@@ -260,6 +310,9 @@ class SosApp {
             case "create":
                 list($p,$kwp) = $this->preprocessCreate($p,$kwp);
                 break;
+            case "create_multiple":
+                list($p,$kwp) = $this->preprocessCreateMultiple($p,$kwp);
+                break;
             case "write":
                 list($p,$kwp) = $this->preprocessWrite($p,$kwp);
                 break;
@@ -275,12 +328,29 @@ class SosApp {
         }
     }
 
+    //TODO: Dividir xmlCall y xmlCallMultiple
     public function xmlCall(){
         $common = ripcord::client("$this->url/xmlrpc/2/common"); /*Fatal error: Class 'ripcord' not found in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 30*/
         $uid = $common->authenticate($this->db, $this->username, $this->password, array());
         // Acceso al endpoint de objetos y ejecución de una kw
         $models = ripcord::client("$this->url/xmlrpc/2/object");
-        $this->output = $models->execute_kw($this->db, $uid, $this->password,$this->ostep->getModel(),$this->ostep->getMethod(),$this->params, $this->kwparams);
+
+        if ($this->ostep->getMethod() == "create_multiple") { //O si contiene multiple.. de momento caso especifico y para grids.
+            $this->output = array();
+            foreach($this->valvarm[0] as $k1 => $v1) { // necesariamente varias variables multiples deben tener el mismo tamaño. Seria absurdo que no.
+                foreach($this->valvarm as $k2 => $v2) {
+                    $this->refvarm[$k2] = $this->valvarm[$k2][$k1][$this->keyvarm[$k2]];
+                    //k2 = @@grid, k1 = linea keyvarm= @@grid[key]
+                }
+                /*$output = $models->execute_kw($db, $uid, $password, 'purchase.order.line', 'create',
+                        array(array( 'name'=>'[CARD] Graphics Card','price_unit'=>876,'product_uom'=>1,'date_planned'=>'2018-11-12 16:32:13','product_id'=>29,'product_qty'=> 616, 'order_id'=> 10)));
+                */
+                $this->output[] = $models->execute_kw($this->db, $uid, $this->password,$this->ostep->getModel(),'create',$this->params, $this->kwparams);
+            }
+             
+        } else {
+            $this->output = $models->execute_kw($this->db, $uid, $this->password,$this->ostep->getModel(),$this->ostep->getMethod(),$this->params, $this->kwparams);
+        }
     }
 
     public function postprocessMethod(){
@@ -320,7 +390,7 @@ class SosApp {
         $aux = array();
         while (!empty($output)) {
                 $e = array_shift ( $output );
-                $aux[] = array($e['id'],$e['name']);
+                $aux[] = array($e['id'],$e[$this->kwparams['fields'][0]]); //$this->kwparams['fields'][0]
             }
         return $aux;
     }
@@ -331,10 +401,38 @@ class SosApp {
         $case = new Cases();
         $loaded = $case->loadCase($Fields["APP_UID"]);
         $loaded["APP_DATA"][$this->ostep->getOutput()] = $output;
+        
+        echo ("<pre>");
+        print_r($this->params); 
+        echo ("</pre>");  
+
+        echo ("<pre>");
+        print_r($output); 
+        echo ("</pre>");  
        
         echo ("<pre>");
-        print_r($loaded["APP_DATA"][$this->ostep->getOutput()]); 
+        print_r($loaded["APP_DATA"]['partner']); 
+        echo ("</pre>");  
+
+        echo ("<pre>");
+        print_r($loaded["APP_DATA"]['itemGrid']); 
         echo ("</pre>"); 
+
+        /*
+        Array
+        (
+            [1] => Array
+                (
+                    [text0000000001] => 
+                    [text0000000001_label] => 
+                    [text0000000002] => 17
+                    [text0000000002_label] => 17
+                    [text0000000003] => desc
+                    [text0000000003_label] => desc
+                )
+        )        
+        */
+
         $case->updateCase($Fields["APP_UID"], $loaded);
     }
 }
