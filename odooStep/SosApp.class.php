@@ -1,6 +1,7 @@
 
 <?php
  require_once('/opt/plugins/odooStep/odooStep/dependencies/ripcord/ripcord.php');
+ require_once('classes/model/ProcessVariables.php');
 /**
  * Step OdooStep App
  * Maneja las operaciones durante la ejecución del paso.
@@ -40,7 +41,12 @@ class SosApp {
         //$this->prepareKWParams($this->ostep->getKwParameters());
         $this->loadConfig();
         $this->preprocessMethod($this->ostep->getMethod());
-        $this->xmlCall();
+        
+        if (strpos($this->ostep->getMethod(), 'multiple') !== false) { //O si contiene multiple..
+            $this->xmlCallmultiple();
+        } else {
+            $this->xmlCall();
+        }
         $this->postprocessMethod();
 
         $this->saveOutput($this->output);
@@ -49,6 +55,12 @@ class SosApp {
     // Separación v,v,v,...
 	public function transformParams($p){
 		$p = preg_split("/[\s,]+/", $p);
+        foreach ($p as $key => $value) {
+            if(is_numeric($value)){
+                print_r($value);
+                $p[$key] = intval($value);
+            }
+        }
         return $p;
 		//return serialize($parametros);
 	}
@@ -91,7 +103,12 @@ class SosApp {
         //print_r($value);
         //$aux = NULL;
         $aux = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $value);// Notice: Array to string conversion in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 67
-        if ($aux != $value) {$p[$key] = unserialize($aux);}
+        if ($aux != $value) {
+            $p[$key] = unserialize($aux);
+            if(is_numeric($p[$key])){
+                $p[$key] = intval($p[$key]);
+            }
+        }
         }
         return $p;
     }
@@ -154,7 +171,7 @@ class SosApp {
         $kwp = $this->prepareKWParams($kwp);
         
        
-        return array($fparams,$kwp);
+        return array(array($fparams),$kwp);
     }
 
     /**
@@ -254,7 +271,7 @@ class SosApp {
             //$p = array_combine($par[1], $par[2]);
             foreach ($p as $clave => $valor) {
                 $p[$clave] = preg_split("/[,]+/x",$valor);
-                if (count($p[$clave]) == 1) {
+                if (count($p[$clave]) == 1) { // Si no había array, ...
                     $p[$clave] = $p[$clave][0];
                 }
                 
@@ -317,7 +334,7 @@ class SosApp {
                 list($p,$kwp) = $this->preprocessWrite($p,$kwp);
                 break;
             case "unlink":
-                list($p,$kwp) = $this->preprocessWrite($p,$kwp);
+                list($p,$kwp) = $this->preprocessUnlink($p,$kwp);
                 break;
         }
         if (!is_null($p)) {
@@ -334,36 +351,70 @@ class SosApp {
         $uid = $common->authenticate($this->db, $this->username, $this->password, array());
         // Acceso al endpoint de objetos y ejecución de una kw
         $models = ripcord::client("$this->url/xmlrpc/2/object");
+        $this->output = $models->execute_kw($this->db, $uid, $this->password,$this->ostep->getModel(),$this->ostep->getMethod(),$this->params, $this->kwparams);
+    }
 
-        if ($this->ostep->getMethod() == "create_multiple") { //O si contiene multiple.. de momento caso especifico y para grids.
-            $this->output = array();
-            foreach($this->valvarm[0] as $k1 => $v1) { // necesariamente varias variables multiples deben tener el mismo tamaño. Seria absurdo que no.
-                foreach($this->valvarm as $k2 => $v2) {
-                    $this->refvarm[$k2] = $this->valvarm[$k2][$k1][$this->keyvarm[$k2]];
-                    //k2 = @@grid, k1 = linea keyvarm= @@grid[key]
-                }
-                /*$output = $models->execute_kw($db, $uid, $password, 'purchase.order.line', 'create',
-                        array(array( 'name'=>'[CARD] Graphics Card','price_unit'=>876,'product_uom'=>1,'date_planned'=>'2018-11-12 16:32:13','product_id'=>29,'product_qty'=> 616, 'order_id'=> 10)));
-                */
-                $this->output[] = $models->execute_kw($this->db, $uid, $this->password,$this->ostep->getModel(),'create',$this->params, $this->kwparams);
+    public function xmlCallMultiple(){
+        $common = ripcord::client("$this->url/xmlrpc/2/common"); /*Fatal error: Class 'ripcord' not found in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 30*/
+        $uid = $common->authenticate($this->db, $this->username, $this->password, array());
+        // Acceso al endpoint de objetos y ejecución de una kw
+        $models = ripcord::client("$this->url/xmlrpc/2/object");
+
+        $this->output = array();
+        foreach($this->valvarm[0] as $k1 => $v1) { // necesariamente varias variables multiples deben tener el mismo tamaño. Seria absurdo que no.
+            foreach($this->valvarm as $k2 => $v2) {
+                $this->refvarm[$k2] = $this->valvarm[$k2][$k1][$this->keyvarm[$k2]];
+                //k2 = @@grid, k1 = linea keyvarm= @@grid[key]
             }
-             
-        } else {
-            $this->output = $models->execute_kw($this->db, $uid, $this->password,$this->ostep->getModel(),$this->ostep->getMethod(),$this->params, $this->kwparams);
+            /*$output = $models->execute_kw($db, $uid, $password, 'purchase.order.line', 'create',
+                    array(array( 'name'=>'[CARD] Graphics Card','price_unit'=>876,'product_uom'=>1,'date_planned'=>'2018-11-12 16:32:13','product_id'=>29,'product_qty'=> 616, 'order_id'=> 10)));
+            */
+            $this->output[] = $models->execute_kw($this->db, $uid, $this->password,$this->ostep->getModel(),'create',$this->params, $this->kwparams);
         }
     }
 
     public function postprocessMethod(){
+        
+        $c = new Criteria();
+        $c->add(ProcessVariablesPeer::VAR_NAME, $this->ostep->getOutput());
+        //$ostep = OdooStepStepPeer::doSelectOne($c);
+        $pvar = $this->Proxy('ProcessVariablesPeer','doSelectOne',$c);
+        $pvar->getVarFieldType();
+
         switch($this->ostep->getMethod()) {
             case "search":
             case "search_count":
                 break;
             case "read":
+                switch($pvar->getVarFieldType()) {
+                        case "grid":
+                        $this->output =  $this->postprocessSearchReadSimple($this->output);
+                            //$this->output =  $this->postprocessSearchReadGrid($this->output);
+                            break;
+                        case "array":
+                            $this->output =  $this->postprocessSearchReadArray($this->output);
+                            //$this->output =  $this->postprocessSearchReadArray($this->output); //array
+                            break;
+                        default:
+                            $this->output =  $this->postprocessSearchReadSimple($this->output);
+                            break;
+                    }
                 break;
             case "fields_get":
                 break;
             case "search_read":
-                $this->output =  $this->postprocessSearchRead($this->output);
+                switch($pvar->getVarFieldType()) {
+                    case "grid":
+                        $this->output =  $this->postprocessSearchReadGrid($this->output);
+                        break;
+                    case "array":
+                        $this->output =  $this->postprocessSearchReadArray($this->output); //array
+                        break;
+                    default:
+                        $this->output =  $this->postprocessSearchReadSimple($this->output);
+                        break;
+                }
+                
                 break;
             case "create":
                 break;
@@ -375,8 +426,41 @@ class SosApp {
     }
 
     /**
+     * Prepare read output for texbox
+     * Formato entrada: Array (
+     *    [0] => Array
+     *        (  [id] => 8
+     *           [name] => Agrolait )
+     *)
+     * Formato de salida: "valor"
+     */
+    public function postprocessReadSimple($output){
+        print_r($output);
+         return $this->postprocessSearchReadSimple($output);
+    }
+
+    /**
+     * Prepare output for textbox
+     * Formato entrada: Array (
+     *    [0] => Array
+     *        (  [id] => 8
+     *           [name] => Agrolait )
+     *)
+     * Formato de salida: "valor"
+     */
+    public function postprocessSearchReadSimple($output){
+        if (count($output[0]) > 1){
+            unset($output[0]['id']);
+            $aux = array_values($output[0]);
+            return $aux[0];
+        } else {
+            return $output[0]['id'];
+        }
+    }
+
+    /**
      * De momento un postprocesamiento muy específico
-     * Prepare output for drowdown
+     * Prepare output for drowdown (array PM)
      * Formato: array(array("clave","valor"),array("clave2","valor2"));
      * Array(
      *[0] => Array
@@ -386,11 +470,37 @@ class SosApp {
      *      [name] => Ice Cream
      *   )
      */
-    public function postprocessSearchRead($output){
-        $aux = array();
+    public function postprocessSearchReadGrid($output){
+        /*$aux = array();
         while (!empty($output)) {
                 $e = array_shift ( $output );
                 $aux[] = array($e['id'],$e[$this->kwparams['fields'][0]]); //$this->kwparams['fields'][0]
+            }*/
+        return $output;
+    }
+
+
+    /**
+     * De momento un postprocesamiento específico
+     * Prepare output for drowdown (array PM)
+     * Formato entrada: array(array("clave","valor"),array("clave2","valor2"));
+     * Formato de salida: Array(
+     *[0] => Array
+     *   (
+     *       [description] => Ice cream can be mass-produced and thuents.
+     *       [id] => 38
+     *      [name] => Ice Cream
+     *   )
+     */
+    public function postprocessSearchReadArray($output){
+        $aux = array();
+        while (!empty($output)) {
+                $e = array_shift ( $output );
+                $id = $e['id'];
+                unset($e['id']);
+                $e = array_values($e);
+                array_unshift($e,$id);
+                $aux[] = $e;
             }
         return $aux;
     }
@@ -411,7 +521,7 @@ class SosApp {
         echo ("</pre>");  
        
         echo ("<pre>");
-        print_r($loaded["APP_DATA"]['partner']); 
+        print_r($loaded["APP_DATA"]['partner']); //
         echo ("</pre>");  
 
         echo ("<pre>");
