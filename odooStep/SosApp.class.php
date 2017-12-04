@@ -1,6 +1,6 @@
 
 <?php
- require_once('/opt/plugins/odooStep/odooStep/dependencies/ripcord/ripcord.php');
+ require_once('dependencies/ripcord/ripcord.php');
  require_once('classes/model/ProcessVariables.php');
 /**
  * Step OdooStep App
