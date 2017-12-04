@@ -7,7 +7,7 @@
  * Maneja las operaciones durante la ejecución del paso.
  */
 class SosApp {
-    protected $ostep, $kwparams, $params, $url,$db,$username,$password,$output;
+    protected $ostep, $kwparams, $params, $url,$db,$username,$password,$output,$outputvar;
     protected $refvarm = array(); //Array de referencias a variables múltiple en los kwparams
     protected $valvarm = array(); //Array de valores de las variables múltiple de los kwparams
     protected $keyvarm = array(); //Array de claves de las variables múltiple de los kwparams
@@ -52,7 +52,10 @@ class SosApp {
         $this->saveOutput($this->output);
     }
 
-    // Separación v,v,v,...
+    /**
+     * Get plaintext and divide (without processing variables)
+     * Separate v,v,v,... into PHP Array
+     */
 	public function transformParams($p){
 		$p = preg_split("/[\s,]+/", $p);
         foreach ($p as $key => $value) {
@@ -65,7 +68,10 @@ class SosApp {
 		//return serialize($parametros);
 	}
 
-	// Separación k:v,v,v INTRO k:v,.... que no sean iguales la k.
+    /**
+     * Get plaintext and divide (without processing variables)
+     * Separate k:v,v,v INTRO k:v,.... into PHP KW Array (k keys mus be different or will override.)
+     */
 	public function transformKWParams($kwp){
 		preg_match_all("/([^:\n]+):([^\n]+)/x", $kwp, $p); 
 		$kwp = array_combine($p[1], $p[2]);
@@ -73,7 +79,9 @@ class SosApp {
 		//return serialize($kwp);
 	}
 
-    /* Cargamos la configuración básica*/
+    /**
+     * Load Odoo configuration into attributes from database
+     */
     public function loadConfig() {
         //$osconf = OdooStepConfPeer::retrieveByPK(1);
         $osconf = $this->Proxy('OdooStepConfPeer','retrieveByPK',1);
@@ -83,6 +91,9 @@ class SosApp {
         $this->password =	$osconf->getPassword();
     }
 
+    /**
+     * Load current step (odooStep) object into attribute
+     */
     public function loadOdooStep($uid){ //$_GET['UID']
         $c = new Criteria();
         $c->add(OdooStepStepPeer::STEP_ID, $uid);
@@ -90,12 +101,21 @@ class SosApp {
         $this->ostep = $this->Proxy('OdooStepStepPeer','doSelectOne',$c);
     }
 
+    /**
+     * Auxiliar function of prepareParams() and callback of preg_replace_callback()
+     * Obtain the process maker variable value from global $Fields
+     * and replace it in the regular expression
+     */
     function varSubtitution($coincidencias) {
         global $Fields;
         return(serialize($Fields["APP_DATA"][$coincidencias[1]])); //Array ( [0] => 8 )
     }
 
-
+    /**
+     * Replace variable @@ expressions with their value, in a PHP variable format
+     * also, save reference, key and value of multivalued variables (array, grid)
+     * for future iteration
+     */
 	public function prepareParams($p) {
         //$p = unserialize($p);
         foreach ($p as $key => $value) {
@@ -103,17 +123,28 @@ class SosApp {
         //print_r($value);
         //$aux = NULL;
         $aux = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $value);// Notice: Array to string conversion in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 67
-        if ($aux != $value) {
+        if ($aux != $value) { //varSubtitution substitute sucessfully
             $p[$key] = unserialize($aux);
-            if(is_numeric($p[$key])){
+            if(is_numeric($p[$key])){ //Now determine type, for avoid conflicts with Odoo Api
                 $p[$key] = intval($p[$key]);
+            }
+            if(is_array($p[$key])) { // It's a multivaluated variable (array) , we save it to possibly iterate later.
+                    $this->refvarm[] = &$p[$key];
+                    $this->keyvarm[] = $key;
+                    $this->valvarm[] = $p[$key];
             }
         }
         }
         return $p;
     }
 	
-    //https://stackoverflow.com/questions/14472380/php-store-array-in-array-by-reference
+    
+    /**
+     * Replace variable @@ expressions with their value, in a PHP variable format
+     * also, save reference, key and value of multivalued variables (array, grid)
+     * for future iteration
+     * https://stackoverflow.com/questions/14472380/php-store-array-in-array-by-reference
+     */
     public function prepareKWParams($kwp) {// Eliminada capacidad para reeplazar variables en claves.
         //$kwp = unserialize($kwp);
         //$keys = array_keys($kwp);
@@ -123,8 +154,9 @@ class SosApp {
           
         
         // TODO: FUSIONAR LOS BUCLES PARA GUARDAR LAS CLAVES DE DONDE ESTAN LAS VARIABLES MULTIPLES Y USARLAS DE ID PARA EL CAMPO DEL GRID
-        // PORUQE LA VARIABLE MULTIPLE VA A TRABAJAR EN MODO GRID.
-        //
+        // PORUQE LA VARIABLE MULTIPLE VA A TRABAJAR EN MODO GRID. 
+        // Si, pues en Read no hay claves.... porque usa parametros... no kwparams
+
             $newValue = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $value);
             if ($newValue != $value) {
                 $kwp[$key] = unserialize($newValue);
@@ -183,6 +215,33 @@ class SosApp {
 
         $p = $this->transformParams($p);
         $p = $this->prepareParams($p);
+
+        $id_array_from_grid = array();
+        echo ("preprocessRead params:");
+        echo ("<pre>");
+        print_r($p); 
+        echo ("</pre>");  
+        foreach ($p as $clave => $valor) {
+                if(is_array($valor)) {// Si es es una sustitución por una variable múltiple... (i still need to distinguish array from grid, only grid for now)
+                    foreach($valor[1] as $key => $value) {
+                        if (preg_match("/(_id$|^id$)/",$key)){ //Im not proud of this... they will find the first "id field" like and use it.
+                            $id_field = $key;
+                        }
+                    }
+                    foreach($valor as $key => $value) {
+                        $id_array_from_grid[] = intval($value[$id_field]); // intval: Odoo complains otherwise.
+                    }
+
+
+                }
+        }
+       
+        $p = array($id_array_from_grid);
+
+        /*echo ("preprocessRead params procesados:");
+        echo ("<pre>");
+        print_r($p); 
+        echo ("</pre>");  */
 
         $kwp = $this->transformKWParams($kwp);
         $kwp = $this->prepareKWParams($kwp);
@@ -374,36 +433,46 @@ class SosApp {
     }
 
     public function postprocessMethod(){
-        
+
+
+
+        /*echo ("this->output:");
+        echo ("<pre>");
+        print_r($this->output); 
+        echo ("</pre>"); */
         $c = new Criteria();
         $c->add(ProcessVariablesPeer::VAR_NAME, $this->ostep->getOutput());
         //$ostep = OdooStepStepPeer::doSelectOne($c);
-        $pvar = $this->Proxy('ProcessVariablesPeer','doSelectOne',$c);
-        $pvar->getVarFieldType();
+        $this->outputvar = $this->Proxy('ProcessVariablesPeer','doSelectOne',$c);
+        /*echo ("pvar:");
+        echo ("<pre>");
+        print_r($this->outputvar); 
+        echo ("</pre>"); */
+        $this->outputvar->getVarFieldType();
+
+        
 
         switch($this->ostep->getMethod()) {
             case "search":
             case "search_count":
                 break;
             case "read":
-                switch($pvar->getVarFieldType()) {
-                        case "grid":
+                switch($this->outputvar->getVarFieldType()) {
+                    case "grid":
+                        $this->output =  $this->postprocessReadGrid($this->output);
+                        break;
+                    case "array":
+                        $this->output =  $this->postprocessReadArray($this->output);
+                        break;
+                    default:
                         $this->output =  $this->postprocessSearchReadSimple($this->output);
-                            //$this->output =  $this->postprocessSearchReadGrid($this->output);
-                            break;
-                        case "array":
-                            $this->output =  $this->postprocessSearchReadArray($this->output);
-                            //$this->output =  $this->postprocessSearchReadArray($this->output); //array
-                            break;
-                        default:
-                            $this->output =  $this->postprocessSearchReadSimple($this->output);
-                            break;
+                        break;
                     }
                 break;
             case "fields_get":
                 break;
             case "search_read":
-                switch($pvar->getVarFieldType()) {
+                switch($this->outputvar->getVarFieldType()) {
                     case "grid":
                         $this->output =  $this->postprocessSearchReadGrid($this->output);
                         break;
@@ -414,7 +483,6 @@ class SosApp {
                         $this->output =  $this->postprocessSearchReadSimple($this->output);
                         break;
                 }
-                
                 break;
             case "create":
                 break;
@@ -425,19 +493,32 @@ class SosApp {
         }
     }
 
-    /**
-     * Prepare read output for texbox
-     * Formato entrada: Array (
-     *    [0] => Array
-     *        (  [id] => 8
-     *           [name] => Agrolait )
-     *)
-     * Formato de salida: "valor"
-     */
-    public function postprocessReadSimple($output){
-        print_r($output);
-         return $this->postprocessSearchReadSimple($output);
+    /*
+    Formato de entrada:
+    Array (
+         [0] => Array
+             (  [id] => 8
+                [name] => Agrolait )
+     )
+    Formato de salida:
+    Array
+    (
+        [0] => 1
+        [1] => d
+    )*/
+    public function postprocessReadArray($output) {
+        foreach ($output as $key => $value) {
+            unset($value["id"]);
+            $output[$key] = reset($value);
+        }
+        return $output;
     }
+
+    
+
+     public function postprocessReadGrid($output){
+        return array_combine(range(1, count($output)), array_values($output));
+     }
 
     /**
      * Prepare output for textbox
@@ -506,27 +587,70 @@ class SosApp {
     }
 
     // Salvando la salida en la variable indicada.
+    // Tomo la siguiente decisión:
+    // Las variables no se sobreescriben, sino que se combinan por defecto.
+    // Tal vez un  combobox eligiendo entre sobreescribir o actualizar 
+    // al lado de "Salida" en el formulario de creacion de step
+    // haga más potente el software.
     public function saveOutput($output){
         global $Fields;
         $case = new Cases();
         $loaded = $case->loadCase($Fields["APP_UID"]);
-        $loaded["APP_DATA"][$this->ostep->getOutput()] = $output;
+
+        switch($this->outputvar->getVarFieldType()) {
+                    case "grid":
+                    //$loaded["APP_DATA"][$this->ostep->getOutput()] = $output;
+                        foreach ($output as $k => $v) {
+                            foreach ($output[$k] as $k2 => $v2) {
+                                $loaded["APP_DATA"][$this->ostep->getOutput()][$k][$k2] = $v2;
+                            }
+                        }
+                        //$loaded["APP_DATA"][$this->ostep->getOutput()] = $output;
+                        break;
+                    case "array":
+                        $loaded["APP_DATA"][$this->ostep->getOutput()] = $output;
+                        break;
+                    default:
+                        $loaded["APP_DATA"][$this->ostep->getOutput()] = $output;
+                        break;
+                }
+
         
+        
+        /*echo ("this->params:");
         echo ("<pre>");
         print_r($this->params); 
         echo ("</pre>");  
 
+        echo ("output:");
         echo ("<pre>");
         print_r($output); 
         echo ("</pre>");  
        
+       echo ("Partner:");
         echo ("<pre>");
         print_r($loaded["APP_DATA"]['partner']); //
         echo ("</pre>");  
 
+        echo ("itemGrid:");
         echo ("<pre>");
         print_r($loaded["APP_DATA"]['itemGrid']); 
         echo ("</pre>"); 
+
+        echo ("gridload:");
+        echo ("<pre>");
+        print_r($loaded["APP_DATA"]['gridload']); 
+        echo ("</pre>"); 
+
+        echo ("checkgroup:");
+        echo ("<pre>");
+        print_r($loaded["APP_DATA"]['checkgroup']); 
+        echo ("</pre>"); 
+
+        echo ("testarrayprecios:");
+        echo ("<pre>");
+        print_r($loaded["APP_DATA"]['testarrayprecios']); 
+        echo ("</pre>"); */
 
         /*
         Array
