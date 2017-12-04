@@ -325,15 +325,16 @@ class SosApp {
     public function preprocessCreateMultiple($p,$kwp){
             $p = $this->transformKWParams($p);
             $p = $this->prepareKWParams($p);
-        
+      
             //preg_match_all("/ ([^:\n]+) : ([^\n]+) /x", $p, $par); // Separación k:v,v,v INTRO k:v,....
             //$p = array_combine($par[1], $par[2]);
             foreach ($p as $clave => $valor) {
-                $p[$clave] = preg_split("/[,]+/x",$valor);
-                if (count($p[$clave]) == 1) { // Si no había array, ...
-                    $p[$clave] = $p[$clave][0];
+                if(!is_array($valor)) {// Si no es una sustitución por una variable múltiple...
+                    $p[$clave] = preg_split("/[,]+/x",$valor);
+                    if (count($p[$clave]) == 1) { // Si no había array, ...
+                        $p[$clave] = $p[$clave][0];
+                    }
                 }
-                
             }
             return array(array($p),NULL);
     }
@@ -434,12 +435,6 @@ class SosApp {
 
     public function postprocessMethod(){
 
-
-
-        /*echo ("this->output:");
-        echo ("<pre>");
-        print_r($this->output); 
-        echo ("</pre>"); */
         $c = new Criteria();
         $c->add(ProcessVariablesPeer::VAR_NAME, $this->ostep->getOutput());
         //$ostep = OdooStepStepPeer::doSelectOne($c);
@@ -485,6 +480,8 @@ class SosApp {
                 }
                 break;
             case "create":
+                break;
+            case "create_multiple":
                 break;
             case "write":
                 break;
@@ -650,6 +647,11 @@ class SosApp {
         echo ("testarrayprecios:");
         echo ("<pre>");
         print_r($loaded["APP_DATA"]['testarrayprecios']); 
+        echo ("</pre>"); */
+
+        /*echo ("testarrayprecios:");
+        echo ("<pre>");
+        print_r($loaded["APP_DATA"]); 
         echo ("</pre>"); */
 
         /*
