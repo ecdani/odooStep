@@ -8,9 +8,10 @@
  */
 class SosApp {
     protected $ostep, $kwparams, $params, $url,$db,$username,$password,$output,$outputvar;
-    protected $refvarm = array(); //Array de referencias a variables múltiple en los kwparams
-    protected $valvarm = array(); //Array de valores de las variables múltiple de los kwparams
-    protected $keyvarm = array(); //Array de claves de las variables múltiple de los kwparams
+    //protected $refvarm = array(); //Array de referencias a variables múltiple en los kwparams
+    //protected $valvarm = array(); //Array de valores de las variables múltiple de los kwparams
+    //protected $keyvarm = array(); //Array de claves de las variables múltiple de los kwparams
+    protected $mvar = array(); // Array de metainformación de las variables multiples.
     // Almaceno dónde hay una variable múltiple y luego itero todos sus valores en llamadas XML-RPC
 
     /**
@@ -102,13 +103,50 @@ class SosApp {
     }
 
     /**
+     * Extract the array that conforms a single field in a PM grid variable type
+     */
+    function grid_field_to_array($grid,$field){
+        $array = array();
+        foreach($grid as $key => $value) {
+            if(is_numeric($value[$field])){
+                $array[] = intval($value[$field]); // intval: Odoo complains otherwise.
+            } else {
+                $array[] = $value[$field];
+            }
+        }
+        return $array;
+    }
+
+    /**
      * Auxiliar function of prepareParams() and callback of preg_replace_callback()
      * Obtain the process maker variable value from global $Fields
      * and replace it in the regular expression
      */
     function varSubtitution($coincidencias) {
+
+
         global $Fields;
-        return(serialize($Fields["APP_DATA"][$coincidencias[1]])); //Array ( [0] => 8 )
+
+        /*echo ("coincidencias:");
+        echo ("<pre>");
+        print_r($coincidencias); 
+        echo ("</pre>");*/
+        $var = array();
+        $var[0] = $coincidencias[1];
+        $var[1] = null;
+        $var[2] = $Fields["APP_DATA"][$coincidencias[1]];
+
+        if (!empty($coincidencias[2])){
+            $var[1] = $coincidencias[2];
+            $var[2] = $this->grid_field_to_array($var[2],$coincidencias[2]);
+        }
+
+        /*echo ("var in varSubstitution:");
+        echo ("<pre>");
+        print_r($var); 
+        echo ("</pre>");*/
+
+        return(serialize($var)); //Array ( [0] => 8 )
     }
 
     /**
@@ -119,21 +157,36 @@ class SosApp {
 	public function prepareParams($p) {
         //$p = unserialize($p);
         foreach ($p as $key => $value) {
-        //print_r("Value");
-        //print_r($value);
-        //$aux = NULL;
-        $aux = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $value);// Notice: Array to string conversion in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 67
-        if ($aux != $value) { //varSubtitution substitute sucessfully
-            $p[$key] = unserialize($aux);
-            if(is_numeric($p[$key])){ //Now determine type, for avoid conflicts with Odoo Api
-                $p[$key] = intval($p[$key]);
+            //print_r("Value");
+            //print_r($value);
+            //$aux = NULL;
+            $newValue = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)[\[\]]*(\w*)[\]]*/", array($this, 'varSubtitution'), $value);// Notice: Array to string conversion in /opt/plugins/odooStep/odooStep/stepodooStepApplication.php on line 67
+            // "/@[@%#\?\x24\=]([A-Za-z_]\w*)[\[\]]*(\w*)[\]]*/"
+            //"/@[@%#\?\x24\=]([A-Za-z_]\w*)/"
+            if ($newValue != $value) { //varSubtitution substitute sucessfully
+                $newValue = unserialize($newValue);
+                $p[$key] = $newValue[2];
+
+                if(is_numeric($p[$key])){ //Now determine type, for avoid conflicts with Odoo Api
+                    $p[$key] = intval($p[$key]);
+                }
+                if(is_array($p[$key])) { // It's a multivaluated variable (array) , we save it to possibly iterate later.
+
+                        /*if (isset($newValue[1])) {
+                            $this->keyvarm[] = $newValue[0];
+                        } else {
+                            $this->keyvarm[] = $key;
+                        }
+                        $this->refvarm[] = &$p[$key];
+                        $this->valvarm[] = $p[$key];*/
+
+                        $this->mvar['pkey'][] = $key; // Parameter key, example;   PKEY:name_of_var[field]
+                        $this->mvar['ref'][] = &$p[$key]; 
+                        $this->mvar['value'][] = $p[$key]; 
+                        $this->mvar['name'][] = $newValue[0]; // variable name, example;   pkey:NAME[field]
+                        $this->mvar['field'][] = $newValue[1]; // field name of grid variable, example;   pkey:grid_var_name[FIELD]
+                }
             }
-            if(is_array($p[$key])) { // It's a multivaluated variable (array) , we save it to possibly iterate later.
-                    $this->refvarm[] = &$p[$key];
-                    $this->keyvarm[] = $key;
-                    $this->valvarm[] = $p[$key];
-            }
-        }
         }
         return $p;
     }
@@ -157,13 +210,23 @@ class SosApp {
         // PORUQE LA VARIABLE MULTIPLE VA A TRABAJAR EN MODO GRID. 
         // Si, pues en Read no hay claves.... porque usa parametros... no kwparams
 
-            $newValue = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)/", array($this, 'varSubtitution'), $value);
+            $newValue = preg_replace_callback("/@[@%#\?\x24\=]([A-Za-z_]\w*)[\[\]]*(\w*)[\]]*/", array($this, 'varSubtitution'), $value);
+            //"/@[@%#\?\x24\=]([A-Za-z_]\w*)[\[\]]*(\w*)[\]]*/"
+            //"/@[@%#\?\x24\=]([A-Za-z_]\w*)/"
             if ($newValue != $value) {
-                $kwp[$key] = unserialize($newValue);
+                $newValue = unserialize($newValue);
+                $kwp[$key]  = $newValue[2];
                 if(is_array($kwp[$key])) { // Es una variable múltiple (un array), la guardamos para posiblemente iterar luego.
-                    $this->refvarm[] = &$kwp[$key];
-                    $this->keyvarm[] = $key;
-                    $this->valvarm[] = $kwp[$key];
+                    //$this->refvarm[] = &$kwp[$key];
+                    //$this->keyvarm[] = $key;
+                    ///$this->valvarm[] = $kwp[$key];
+
+                    $this->mvar['pkey'][] = $key; // Parameter key, example;   PKEY:name_of_var[field]
+                    $this->mvar['ref'][] = &$kwp[$key]; 
+                    $this->mvar['value'][] = $kwp[$key]; 
+                    $this->mvar['name'][] = $newValue[0]; // variable name, example;   pkey:NAME[field]
+                    $this->mvar['field'][] = $newValue[1]; // field name of grid variable, example;   pkey:grid_var_name[FIELD]
+
                 }
             }
 
@@ -216,13 +279,16 @@ class SosApp {
         $p = $this->transformParams($p);
         $p = $this->prepareParams($p);
 
-        $id_array_from_grid = array();
-        echo ("preprocessRead params:");
+        //$id_array_from_grid = array();
+        /*echo ("preprocessRead params:");
         echo ("<pre>");
         print_r($p); 
-        echo ("</pre>");  
+        echo ("</pre>");*/
+        // Ahora se exige un array, debido a que se puede especificar el campo del grid.
+        /*  
         foreach ($p as $clave => $valor) {
                 if(is_array($valor)) {// Si es es una sustitución por una variable múltiple... (i still need to distinguish array from grid, only grid for now)
+                    
                     foreach($valor[1] as $key => $value) {
                         if (preg_match("/(_id$|^id$)/",$key)){ //Im not proud of this... they will find the first "id field" like and use it.
                             $id_field = $key;
@@ -234,9 +300,9 @@ class SosApp {
 
 
                 }
-        }
+        }*/
        
-        $p = array($id_array_from_grid);
+        //$p = array($id_array_from_grid);
 
         /*echo ("preprocessRead params procesados:");
         echo ("<pre>");
@@ -421,9 +487,33 @@ class SosApp {
         $models = ripcord::client("$this->url/xmlrpc/2/object");
 
         $this->output = array();
-        foreach($this->valvarm[0] as $k1 => $v1) { // necesariamente varias variables multiples deben tener el mismo tamaño. Seria absurdo que no.
-            foreach($this->valvarm as $k2 => $v2) {
-                $this->refvarm[$k2] = $this->valvarm[$k2][$k1][$this->keyvarm[$k2]];
+
+
+        // necesariamente varias variables multiples deben tener el mismo tamaño. Seria absurdo que no.
+
+        /*echo ("this->mvar['value']:");
+        echo ("<pre>");
+        print_r($this->mvar['value']); 
+        echo ("</pre>");*/
+        
+
+        foreach($this->mvar['value'][0] as $field => $v1) { // Iteracion sobre campos
+            foreach($this->mvar['value'] as $mvpkey => $value) { // Iteracion sobre la grilla
+                
+                /*echo ("this->mvar['field'][mvpkey]:");
+                echo ("<pre>");
+                print_r($mvpkey); 
+                print_r($this->mvar['field']); 
+                echo ("</pre>");*/
+
+                if (!is_null($this->mvar['field'][$mvpkey])) {
+                    //[$this->mvar['field'][$mvpkey]]
+                    $this->mvar['ref'][$mvpkey] = $this->mvar['value'][$mvpkey][$field];
+                } else {
+                    //[$this->mvar['pkey'][$mvpkey]]
+                    $this->mvar['ref'][$mvpkey] = $this->mvar['value'][$mvpkey][$field];
+                }
+                
                 //k2 = @@grid, k1 = linea keyvarm= @@grid[key]
             }
             /*$output = $models->execute_kw($db, $uid, $password, 'purchase.order.line', 'create',
@@ -598,7 +688,7 @@ class SosApp {
                     case "grid":
                     //$loaded["APP_DATA"][$this->ostep->getOutput()] = $output;
                         foreach ($output as $k => $v) {
-                            foreach ($output[$k] as $k2 => $v2) {
+                            foreach ($output[$k] as $k2 => $v2) { //FALLOoooooooooo Invalid argument supplied for foreach() in /opt/plugins/odooStep/odooStep/SosApp.class.php on line 627
                                 $loaded["APP_DATA"][$this->ostep->getOutput()][$k][$k2] = $v2;
                             }
                         }
@@ -613,8 +703,8 @@ class SosApp {
                 }
 
         
-        
-        /*echo ("this->params:");
+        /*
+        echo ("this->params:");
         echo ("<pre>");
         print_r($this->params); 
         echo ("</pre>");  
