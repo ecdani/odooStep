@@ -3,7 +3,7 @@ require_once(dirname(__FILE__) . '/simpletest/autorun.php');
 require_once('simpletest/mock_objects.php');
 require_once("ScApp.class.php");
 Mock::generatePartial('OdooStepStep','OdooStepStepTest',array('save','delete'));
-Mock::generatePartial('scApp','scAppTest', array('f','osspProxy'));
+Mock::generatePartial('scApp','scAppTest', array('f','proxy'));
 
 class TestOfCRUDSteps extends UnitTestCase {
     public $post = array(), $ostep, $ossc, $scaa;
@@ -33,10 +33,10 @@ class TestOfCRUDSteps extends UnitTestCase {
         //$this->scaa->setReturnReference('newOdooStepConf', $this->osc);
         
         $this->scaa->returns('f', $this->ostep,array('OdooStepStep'));
-        //$this->scaa->returns('osspProxy', array($this->ostep),array('*'));
-        $this->scaa->returns('osspProxy', $this->ostep ,array('retrieveByPK','*'));
-        $this->scaa->returns('osspProxy', array($this->ostep),array('doSelect','*'));
-        $this->scaa->returns('osspProxy', $this->ostep,array('doSelectOne','*'));
+        //$this->scaa->returns('proxy', array($this->ostep),array('*'));
+        $this->scaa->returns('proxy', $this->ostep ,array('OdooStepStepPeer','retrieveByPK','*'));
+        $this->scaa->returns('proxy', array($this->ostep),array('OdooStepStepPeer','doSelect','*'));
+        $this->scaa->returns('proxy', $this->ostep,array('OdooStepStepPeer','doSelectOne','*'));
     }
 
     /**
@@ -50,39 +50,6 @@ class TestOfCRUDSteps extends UnitTestCase {
     function __construct() {
         parent::__construct('CRUD de Odoo Steps');
     }
-    /*
-    public function revertParams($params)
-    public function revertKWParams($kwparams)
-    public function transformParams($params)
-    public function transformKWParams($kwparams)
-    public function getStep($r, $i, $textFilter)
-    public function saveStep($post)
-    public function listSteps($post)
-    public function deleteStep($post)
-    public function nextStepID()
-    public function createStep($post)
-    */
-
-    /*function testRevertParams() {
-        //$s = $this->scaa->revertParams('a:3:{i:0;s:10:"is_company";i:1;s:1:"=";i:2;s:4:"true";}');
-        $s = $this->scaa->revertParams($this->ostep->getParameters());
-        $this->assertEqual($s,"is_company,=,true");
-    }
-
-    function testRevertKWParams() {
-        $s = $this->scaa->revertKWParams($this->ostep->getKWParameters());
-        $this->assertEqual($s,"clave:1,2,3,4\nclave2:bar");
-    }
-
-    function testTransformParams() {
-        $s = $this->scaa->TransformParams("is_company,=,true");
-        $this->assertEqual($s,$this->ostep->getParameters());
-    }
-
-    function testTransformKWParams() {
-        $s = $this->scaa->TransformKWParams("clave:1,2,3,4\nclave2:bar");
-        $this->assertEqual($s,$this->ostep->getKWParameters());
-    }*/
 
     function testGetStep() {
         //$limit, $start, $textFilter
@@ -144,6 +111,7 @@ class TestOfCRUDSteps extends UnitTestCase {
         $this->assertEqual($s,"4553885635943a689c55440011040001");
     }
 
+    # Hay un singleton.
     function testCreateStep() {
 
     }

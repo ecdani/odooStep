@@ -2,8 +2,8 @@
 require_once(dirname(__FILE__) . '/simpletest/autorun.php');
 require_once('simpletest/mock_objects.php');
 require_once("CpApp.class.php");
-Mock::generate('OdooStepConf');
-Mock::generatePartial('cpApp','cpAppTest', array('f','oscpProxy'));
+Mock::generatePartial('OdooStepConf','OdooStepConfTest',array('save'));
+Mock::generatePartial('cpApp','cpAppTest', array('f','proxy'));
 
 class TestOfCPSave extends UnitTestCase {
     public $post = array(), $osc, $oscp, $cpaa;
@@ -15,7 +15,8 @@ class TestOfCPSave extends UnitTestCase {
      *    @access public
      */
     function setUp() {
-        $this->osc = new MockOdooStepConf();
+
+        $this->osc = new OdooStepConfTest();
         $this->osc->returns('save', true);
         $this->osc->setUrl("http://test");
         $this->osc->setDb("test");
@@ -25,7 +26,7 @@ class TestOfCPSave extends UnitTestCase {
         //$this->cpaa->setReturnReference('newOdooStepConf', $this->osc);
         //$this->cpaa->returns('f', $this->osc);
         $this->cpaa->returns('f', $this->osc,array('OdooStepConf'));
-        $this->cpaa->returns('oscpProxy', $this->osc ,array('retrieveByPK'));
+        $this->cpaa->returns('proxy', $this->osc ,array('OdooStepConfPeer','retrieveByPK','*'));
     }
 
     /**

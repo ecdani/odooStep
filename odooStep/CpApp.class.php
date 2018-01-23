@@ -18,18 +18,17 @@ class cpApp {
     }
 
 	/**
-	 * Proxy para la clase OdooStepStepPeer y evitar conflicto con
+	 * Proxy para las clases Peer y evitar conflicto con
 	 * las llamadas estáticas en el testing de SimpleTest.
 	 */
-	protected function oscpProxy($f,$p) {
-		return call_user_func_array('OdooStepConfPeer::'.$f, array($p)); 
+    protected function proxy($c,$f,$p) {
+		return call_user_func_array($c.'::'.$f, array($p)); 
 	}
-
 
 	public function saveConf($post) {
 			try {
 				//$osconf = OdooStepConfPeer::retrieveByPK(1);
-				$osconf = $this->oscpProxy('retrieveByPK',1);
+				$osconf = $this->proxy('OdooStepConfPeer','retrieveByPK',1);
 				if (is_null($osconf)) $osconf = $this->f("OdooStepConf"); 
 				if (isset($post['txtUrl'])) $osconf->setUrl($post["txtUrl"]); else throw new Exception("URL no proporcionada",1);
 				if (isset($post['txtDb'])) $osconf->setDb($post["txtDb"]); else throw new Exception("DB no proporcionada",1);
@@ -45,10 +44,12 @@ class cpApp {
 				));
 			}
 	}
+
 	public function loadConf() {
 		try{
 			//$OdooStepConf = OdooStepConfPeer::retrieveByPK(1);
-			$OdooStepConf = $this->oscpProxy('retrieveByPK',1);
+			$OdooStepConf = $this->proxy('OdooStepConfPeer','retrieveByPK',1);
+			
 			if (! is_null ( $OdooStepConf ) ) {
 				$array = $OdooStepConf->toArray();
 			} else {

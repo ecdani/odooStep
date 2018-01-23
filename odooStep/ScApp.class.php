@@ -20,48 +20,12 @@ class scApp {
     }
 	
 	/**
-	 * Proxy para la clase OdooStepStepPeer y evitar conflicto con
+	 * Proxy para las clases Peer y evitar conflicto con
 	 * las llamadas estáticas en el testing de SimpleTest.
 	 */
-	protected function osspProxy($f,$p) {
-		return call_user_func_array('OdooStepStepPeer::'.$f, array($p)); 
+    protected function proxy($c,$f,$p) {
+		return call_user_func_array($c.'::'.$f, array($p)); 
 	}
-
-	/**
-	 * Revierte un array clave-valor al texto con
-	 * formato aceptado por el plugin para los parametrosKW
-	 */
-	 /*
-	public function revert(&$v, $k) {
-		$v = "$k:$v"; // Sin /n
-	}
-
-	public function revertParams($params) {
-		$p = unserialize($params);
-		return implode(",", $p);
-	}
-
-	public function revertKWParams($kwparams) {
-		$kwp = unserialize($kwparams);
-		array_walk($kwp, array($this, 'revert'));
-		$s = implode("\n", array_values($kwp)); // Sin /n
-		rtrim($s);
-		return $s;
-
-	}*/
-
-	// Separación v,v,v,...
-	/*public function transformParams($params){
-		$parametros = preg_split("/[\s,]+/", $params);
-		return serialize($parametros);
-	}*/
-
-	// Separación k:v,v,v INTRO k:v,.... que no sean iguales la k.
-	/*public function transformKWParams($kwparams){
-		preg_match_all("/([^:\n]+):([^\n]+)/x", $kwparams, $p); 
-		$kwparams = array_combine($p[1], $p[2]);
-		return serialize($kwparams);
-	}*/
 
 	/**
 	 * Obtiene una lista de OdooSteps preparada para ser mostrada
@@ -77,7 +41,7 @@ class scApp {
 		}
 
 		//$steps = OdooStepStepPeer::doSelect($c);
-		$steps = $this->osspProxy('doSelect',$c);
+		$steps = $this->proxy('OdooStepStepPeer','doSelect',$c);
 		$return = array();
 		foreach($steps as $k => $v) {
 			//$p = $this->revertParams($v->getParameters());
@@ -103,7 +67,7 @@ class scApp {
 	public function saveStep($post) {
 		try {
 			//$ostep = OdooStepStepPeer::retrieveByPK($stepid);
-			$ostep = $this->osspProxy('retrieveByPK',$post["id"]);
+			$ostep = $this->proxy('OdooStepStepPeer','retrieveByPK',$post["id"]);
 			if (!(is_object($ostep) && get_class($ostep) == 'OdooStepStep')) {
 				$ostep = $this->f("OdooStepStep");
 				//$ostep = new OdooStepStep();
@@ -148,7 +112,7 @@ class scApp {
 	public function deleteStep($post) {
 		try {
 			//$ostep = OdooStepStepPeer::retrieveByPK($post["id"]);
-			$ostep = $this->osspProxy('retrieveByPK',$post["id"]);
+			$ostep = $this->proxy('OdooStepStepPeer','retrieveByPK',$post["id"]);
 			if (is_object($ostep) && get_class($ostep) == 'OdooStepStep') {
 				$ostep->delete();
 			}
@@ -162,7 +126,7 @@ class scApp {
 		$c = new Criteria();
 		$c->addDescendingOrderByColumn('ID');
 		//$lastStep = OdooStepStepPeer::doSelectOne($c);
-		$lastStep = $this->osspProxy('doSelectOne',$c);
+		$lastStep = $this->proxy('OdooStepStepPeer','doSelectOne',$c);
 		if (!is_null($lastStep)) {
 			$stepid = $lastStep->getStepId();
 			$contador = substr($stepid, -4);
@@ -186,6 +150,8 @@ class scApp {
 			} else {
 				throw $result["exception"];
 			}
+			#$oPluginRegistry = $this->proxy('PMPluginRegistry','getSingleton');
+
 			$oPluginRegistry = PMPluginRegistry::getSingleton();
 			$oPluginRegistry->registerStep("odooStep", $ostep->getStepId() , "stepodooStepApplication", $ostep->getNombre());
 			$oPluginRegistry->save();
