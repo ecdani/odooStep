@@ -1,5 +1,8 @@
 ﻿Ext.namespace("fullplugin");
 
+/**
+ * This is the CRUD interface of "Odoo Steps Creator" menu. All in ExtJS
+ */
 fullplugin.application = {
   init: function () {
     storeStepProcess = function (n, r, i) {

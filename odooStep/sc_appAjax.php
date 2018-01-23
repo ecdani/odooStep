@@ -3,7 +3,7 @@
 require_once ("ScApp.class.php");
 
 /**
- * Manejador Ajax
+ * Ajax handler of "Odoo Steps Creator" page functionality (CRUD)
  */
 $scapp = new scApp();
 try {

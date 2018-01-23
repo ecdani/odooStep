@@ -2,12 +2,13 @@
 
 /**
  * Step Configuration App
- * Creación, Edición, Borrado y Listado de OdooSteps
+ * Creation, Edition, Deletion and List of OdooSteps
  */
 class scApp {
 
 	/**
-	 * Factory method, los métodos estáticos no pueden emularse.
+	 * Factory method, because static methods can not be emulated.
+	 * @param $p Name of class
 	 */
 	protected function f($p) {
 		switch ($p) {
@@ -20,16 +21,22 @@ class scApp {
     }
 	
 	/**
-	 * Proxy para las clases Peer y evitar conflicto con
-	 * las llamadas estáticas en el testing de SimpleTest.
+	 * Proxy for Peer classes that avoids conflict with
+	 * static calls in the SimpleTest testing.
+	 * @param $c Class name
+	 * @param $f Method name
+	 * @param $p parameters
 	 */
     protected function proxy($c,$f,$p) {
 		return call_user_func_array($c.'::'.$f, array($p)); 
 	}
 
 	/**
-	 * Obtiene una lista de OdooSteps preparada para ser mostrada
-	 * en un formulario ExtJS.
+	 * Get a list of OdooSteps ready to be displayed
+ 	 * in an ExtJS form.
+	 * @param $r Limit of query
+	 * @param $i Offset of query
+	 * @param $textFilter Search word
 	 */
 	public function getStep($r, $i, $textFilter) {
 		$c = new Criteria();
@@ -44,9 +51,6 @@ class scApp {
 		$steps = $this->proxy('OdooStepStepPeer','doSelect',$c);
 		$return = array();
 		foreach($steps as $k => $v) {
-			//$p = $this->revertParams($v->getParameters());
-			//$kwp = $this->revertKWParams($v->getKwParameters());
-			
 			$return[] = array(
 				"ID" => $v->getId() ,
 				"PRO_UID" => $v->getProUid() ,
@@ -64,13 +68,16 @@ class scApp {
 		));
 	}
 
+	/**
+	 * Save OdooStep
+	 * @param $post HTTP POST method result
+	 */
 	public function saveStep($post) {
 		try {
 			//$ostep = OdooStepStepPeer::retrieveByPK($stepid);
 			$ostep = $this->proxy('OdooStepStepPeer','retrieveByPK',$post["id"]);
 			if (!(is_object($ostep) && get_class($ostep) == 'OdooStepStep')) {
 				$ostep = $this->f("OdooStepStep");
-				//$ostep = new OdooStepStep();
 				$ostep->setStepId($post["id"]);
 			}
 
@@ -79,8 +86,7 @@ class scApp {
 			$ostep->setModel($post["newModelo"]);
 			$ostep->setMethod($post["newMetodo"]);
 			$ostep->setOutput($post["newSalida"]);
-			//$parametros = $this->transformParams($post["newParametros"]);
-			//$kwparams = $this->transformKWParams($post["newParametrosKW"]);
+
 			$ostep->setParameters($post["newParametros"]);
 			$ostep->setKwParameters($post["newParametrosKW"]);
 			$ostep->save();
@@ -88,9 +94,12 @@ class scApp {
 		} catch (Exception $e) {
 			return array("success" => false, "exception" => $e);
 		}
-		
 	}
 
+	/**
+	 * Return the demanded list of OdooSteps since "Odoo Step Creator" page
+	 * @param $post HTTP POST method result
+	 */
 	public function listSteps($post) {
 		try {
 			$pageSize = $post["pageSize"];
@@ -103,12 +112,15 @@ class scApp {
 				"resultTotal" => $userNum,
 				"resultRoot" => $user
 			);
-		// echo "{success: " . true . ", resultTotal: " . count($user) . ", resultRoot: " . G::json_encode($user) . "}";
 		} catch (Exception $e){
 			return array("success" => false, "exception" => $e);
 		}
 	}
 
+	/**
+	 * Delete a OdooStep
+	 * @param $post HTTP POST method result
+	 */
 	public function deleteStep($post) {
 		try {
 			//$ostep = OdooStepStepPeer::retrieveByPK($post["id"]);
@@ -122,6 +134,10 @@ class scApp {
 		return array( "success" => true );
 	}
 
+	/**
+	 * Generate next unique identificator of Step.
+	 * The first identificator is one suggested by ProcessMaker documentation... really, its a random one.
+	 */
 	public function nextStepID() {
 		$c = new Criteria();
 		$c->addDescendingOrderByColumn('ID');
@@ -141,6 +157,10 @@ class scApp {
 		return $stepid;
 	}
 
+	/**
+	 * Create a OdooStep
+	 * @param $post HTTP POST method result
+	 */
 	public function createStep($post) {
 		try {
 			$post["id"] = $this->nextStepID();

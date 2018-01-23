@@ -1,5 +1,8 @@
 ﻿Ext.namespace("stepodooStep");
 
+/**
+ * This is the Odoostep interface during its execution. TODO: Do something with it or eliminate it.
+ */
 stepodooStep.application = {
   init:function(){
     storeApplicationProcess = function () {

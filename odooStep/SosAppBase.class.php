@@ -5,16 +5,17 @@
 
 /**
  * Step OdooStep App
- * Maneja las operaciones durante la ejecución del paso.
+ * Handles the operations during the execution of the step.
  */
 class BaseSosApp {
     public $ostep, $kwparams, $params, $url,$db,$username,$password,$output,$outputvar;
     public $mvar = array(); // Array de metainformación de las variables multiples.
     // Almaceno dónde hay una variable múltiple y luego itero todos sus valores en llamadas XML-RPC
 
-    /**
-	* Factory method, los métodos estáticos no pueden emularse.
-	*/
+	/**
+	 * Factory method, because static methods can not be emulated.
+	 * @param $p Name of class
+	 */
 	protected function f($p) {
 		switch ($p) {
             case "OdooStepConf":
@@ -26,15 +27,18 @@ class BaseSosApp {
     }
 
 	/**
-	 * Proxy para las clases Peer y evitar conflicto con
-	 * las llamadas estáticas en el testing de SimpleTest.
+	 * Proxy for Peer classes that avoids conflict with
+	 * static calls in the SimpleTest testing.
+	 * @param $c Class name
+	 * @param $f Method name
+	 * @param $p parameters
 	 */
     protected function proxy($c,$f,$p) {
 		return call_user_func_array($c.'::'.$f, array($p)); 
 	}
 
     /**
-     * Ejecucion de un paso de Odoo.
+     * Execution of a OdooStep
      * @param $uid User id
      */
     public function execute($uid) {
@@ -54,6 +58,7 @@ class BaseSosApp {
     /**
      * Get plaintext and divide (without processing variables)
      * Separate v,v,v,... into PHP Array
+     * @param $p String of parameters
      */
 	public function transformParams($p) {
 		$p = preg_split("/[\s,]+/", $p);
@@ -69,6 +74,7 @@ class BaseSosApp {
     /**
      * Get plaintext and divide (without processing variables)
      * Separate k:v,v,v INTRO k:v,.... into PHP KW Array (k keys mus be different or will override.)
+     * @param $kwp String of key-value parameters
      */
 	public function transformKWParams($kwp) {
 		preg_match_all("/([^:\n]+):([^\n]+)/x", $kwp, $p); 
@@ -268,7 +274,7 @@ class BaseSosApp {
     }
 
     /**
-     * Salvando la salida en la variable indicada.
+     * Saving the output in the indicated variable.
      * @param $output Return of XML-RPC call.
      */
     public function saveOutput($output) {

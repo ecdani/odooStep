@@ -38,7 +38,6 @@ class SosApp extends BaseSosApp {
         $kwp = $this->transformKWParams($kwp);
         
         $kwp = $this->prepareKWParams($kwp);
-        
        
         return array(array($fparams),$kwp);
     }
@@ -71,8 +70,6 @@ class SosApp extends BaseSosApp {
                     foreach($valor as $key => $value) {
                         $id_array_from_grid[] = intval($value[$id_field]); // intval: Odoo complains otherwise.
                     }
-
-
                 }
         }*/
        
@@ -108,7 +105,6 @@ class SosApp extends BaseSosApp {
         return array(array(),$kwp);
     }
 
-
     /**
      * $models->execute_kw($db, $uid, $password,'res.partner', 'search_read',
      * array(array(array('is_company', '=', true), array('customer', '=', true))),
@@ -137,7 +133,6 @@ class SosApp extends BaseSosApp {
         }
         return array($fparams,$kwp);
     }
-
 
     /**
      * $id = $models->execute_kw($db, $uid, $password, 'res.partner', 'create',
@@ -208,9 +203,7 @@ class SosApp extends BaseSosApp {
             return array(array(array($p)),NULL);
     }
 
-
     /***************POSTPROCESSORS**********************/
-
 
     /*
     Formato de entrada:
@@ -231,9 +224,7 @@ class SosApp extends BaseSosApp {
             $output[$key] = reset($value);
         }
         return $output;
-    }
-
-    
+    }   
 
     public function postprocess_read_grid($output){
         return array_combine(range(1, count($output)), array_values($output));
@@ -270,8 +261,6 @@ class SosApp extends BaseSosApp {
         return $this->postprocess_search_read_default($output);
     }
 
-
-
     /**
      * De momento un postprocesamiento muy específico
      * Prepare output for drowdown (array PM)
@@ -292,7 +281,6 @@ class SosApp extends BaseSosApp {
             }*/
         return $output;
     }
-
 
     /**
      * De momento un postprocesamiento específico
@@ -318,6 +306,4 @@ class SosApp extends BaseSosApp {
             }
         return $aux;
     }
-
-
 }
